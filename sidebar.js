@@ -22,13 +22,23 @@ chatInput.addEventListener('keydown', (e) => {
 });
 
 sendBtn.addEventListener('click', sendMessage);
+const welcomeScreenHTML = `
+                <div class="welcome-screen">
+                    <div class="welcome-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor"
+                            stroke-width="1">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <h2>Welcome to 1e Assistant</h2>
+                    <p>Designed for Pure Intelligence.</p>
+                    <p class="subtitle">I can read the page, answer questions, translate, and perform browser actions.
+                    </p>
+                </div>
+`;
+
 clearBtn.addEventListener('click', () => {
-    // Keep welcome screen if needed, or just clear messages
-    const welcomeScreen = document.querySelector('.welcome-screen');
-    chatContainer.innerHTML = '';
-    if (welcomeScreen) {
-        chatContainer.appendChild(welcomeScreen);
-    }
+    chatContainer.innerHTML = welcomeScreenHTML;
     // RESET AGENT STATE
     chatHistory = [];
     isAgentRunning = false;
