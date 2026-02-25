@@ -138,6 +138,7 @@ select.action-btn option {
     flex-direction: column;
     gap: 24px;
     padding-bottom: 20px;
+    min-height: 100%;
 }
 
 .welcome-screen {
@@ -146,8 +147,7 @@ select.action-btn option {
     align-items: center;
     justify-content: center;
     text-align: center;
-    margin-top: 40px;
-    margin-bottom: 20px;
+    margin: auto 0;
     padding: 30px 20px;
     background: linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
     border-radius: 16px;
@@ -366,4 +366,18 @@ textarea::placeholder {
     padding: 8px 12px;
     border-radius: 6px;
     border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Success message styling */
+.success-msg {
+    color: var(--accent);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    background: rgba(34, 197, 94, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(34, 197, 94, 0.2);
 }

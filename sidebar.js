@@ -25,10 +25,7 @@ sendBtn.addEventListener('click', sendMessage);
 const welcomeScreenHTML = `
                 <div class="welcome-screen">
                     <div class="welcome-icon">
-                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor"
-                            stroke-width="1">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
+                        <img src="1e.png" alt="1e Logo" width="48" height="48" style="border-radius: 8px;">
                     </div>
                     <h2>Welcome to 1e Assistant</h2>
                     <p>Designed for Pure Intelligence.</p>
@@ -63,7 +60,7 @@ translateLang.addEventListener('change', async (e) => {
         const texts = await getPageTextNodes();
 
         if (!texts || texts.length === 0) {
-            addMessage("No translatable text found on this page.", "ai", true);
+            addMessage("No translatable text found on this page.", "ai", "error");
             translateLang.value = "";
             return;
         }
@@ -76,13 +73,13 @@ translateLang.addEventListener('change', async (e) => {
 
         const data = await response.json();
         if (data.translated_texts) {
-            addMessage("Translation complete. Updating the page in-place...", "ai");
+            addMessage("Translation complete. Updating the page in-place...", "ai", "success");
             replacePageTextNodes(data.translated_texts);
         } else {
             throw new Error("Missing translated texts from backend");
         }
     } catch (error) {
-        addMessage("Translation failed. 1e may be incorrect. Please verify connection.", "ai", true);
+        addMessage("Translation failed. 1e may be incorrect. Please verify connection.", "ai", "error");
         console.error(error);
         translateLang.value = "";
     } finally {
@@ -202,7 +199,7 @@ async function runAgentLoop() {
     } catch (error) {
         console.error('Chat error:', error);
         removeElement(typingId);
-        addMessage("1e encountered an error connecting to the backend. Please verify your connection.", 'ai', true);
+        addMessage("1e encountered an error connecting to the backend. Please verify your connection.", 'ai', 'error');
         // On error, let the user retry
         isAgentRunning = false;
     } finally {
@@ -210,15 +207,20 @@ async function runAgentLoop() {
     }
 }
 
-function addMessage(text, sender, isError = false) {
+function addMessage(text, sender, type = 'normal') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${sender}-message`;
 
-    if (isError) {
+    if (type === 'error' || type === true) {
         msgDiv.innerHTML = `<div class="error-msg">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
+            ${text}
+        </div>`;
+    } else if (type === 'success') {
+        msgDiv.innerHTML = `<div class="success-msg">
+            <img src="1e.png" alt="Success Logo" width="16" height="16" style="border-radius: 2px;">
             ${text}
         </div>`;
     } else {
