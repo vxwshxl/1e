@@ -31,8 +31,8 @@ function extractContext() {
     document.querySelectorAll('[data-1e-id]').forEach(el => el.removeAttribute('data-1e-id'));
     nextElementId = 1;
 
-    // Limit text to avoid payload size issues
-    const text = document.body ? document.body.innerText.substring(0, 3000) : "";
+    // Limit text to avoid payload size issues but keep enough for e-commerce sites
+    const text = document.body ? document.body.innerText.substring(0, 8000) : "";
 
     const inputs = [];
     try {
@@ -77,7 +77,7 @@ function extractContext() {
     return {
         page_content: text,
         elements: {
-            interactable: [...inputs, ...buttons].slice(0, 150), // Keep payload broad enough for complex pages
+            interactable: [...inputs, ...buttons].slice(0, 300), // Keep payload broad enough for complex pages
             headings: [...new Set(headings)]
         }
     };
