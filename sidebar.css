@@ -384,6 +384,26 @@ textarea::placeholder {
     }
 }
 
+.equalizer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 16px;
+    margin-left: 6px;
+}
+
+.equalizer.hidden {
+    display: none;
+}
+
+.equalizer .bar {
+    width: 4px;
+    background-color: var(--accent);
+    border-radius: 2px;
+    min-height: 2px;
+    transition: height 0.05s ease;
+}
+
 .footer-meta {
     display: flex;
     justify-content: center;

@@ -5,6 +5,8 @@ const clearBtn = document.getElementById('clear-btn');
 const translateLang = document.getElementById('translate-lang');
 const micBtn = document.getElementById('mic-btn');
 const speechLang = document.getElementById('speech-lang');
+const equalizer = document.getElementById('mic-equalizer');
+const eqBars = equalizer ? equalizer.querySelectorAll('.bar') : [];
 
 // Replace this with your actual local backend URL during testing
 const BACKEND_URL = 'http://127.0.0.1:8000';
@@ -14,6 +16,12 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 let recognition = null;
 let isRecording = false;
 let silenceTimer = null;
+
+// Audio context and equalizer state
+let audioContext = null;
+let analyser = null;
+let microphoneStream = null;
+let eqAnimationId = null;
 
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
@@ -89,6 +97,62 @@ function stopRecording() {
     isRecording = false;
     micBtn.classList.remove('recording');
     clearTimeout(silenceTimer);
+
+    // Stop and clean up equalizer and audio stream
+    if (eqAnimationId) cancelAnimationFrame(eqAnimationId);
+    if (equalizer) equalizer.classList.add('hidden');
+
+    if (microphoneStream) {
+        microphoneStream.getTracks().forEach(track => track.stop());
+        microphoneStream = null;
+    }
+    if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close();
+        audioContext = null;
+    }
+}
+
+function startEqualizer() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            microphoneStream = stream;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            if (equalizer) equalizer.classList.remove('hidden');
+
+            function animateEq() {
+                if (!isRecording) return;
+                eqAnimationId = requestAnimationFrame(animateEq);
+
+                analyser.getByteFrequencyData(dataArray);
+
+                // Use lower frequencies which usually carry voice energy better
+                const v1 = dataArray[10] / 255;
+                const v2 = dataArray[20] / 255;
+                const v3 = dataArray[30] / 255;
+                const v4 = dataArray[40] / 255;
+
+                if (eqBars.length >= 4) {
+                    eqBars[0].style.height = Math.max(2, v1 * 14) + 'px';
+                    eqBars[1].style.height = Math.max(2, v2 * 14) + 'px';
+                    eqBars[2].style.height = Math.max(2, v3 * 14) + 'px';
+                    eqBars[3].style.height = Math.max(2, v4 * 14) + 'px';
+                }
+            }
+
+            animateEq();
+        })
+        .catch(err => {
+            console.warn("Could not start equalizer audio stream:", err);
+            // We ignore it, speech recognition might still work or has thrown its own error (like not-allowed)
+        });
 }
 
 micBtn.addEventListener('click', () => {
@@ -99,10 +163,12 @@ micBtn.addEventListener('click', () => {
 
     if (isRecording) {
         recognition.stop();
+        stopRecording();
     } else {
         chatInput.dataset.baseValue = chatInput.value;
         recognition.lang = speechLang.value;
         recognition.start();
+        startEqualizer();
         chatInput.focus();
     }
 });
@@ -217,6 +283,7 @@ async function sendMessage() {
 
     if (isRecording && recognition) {
         recognition.stop();
+        stopRecording();
     }
 
     // Remove welcome screen on first message

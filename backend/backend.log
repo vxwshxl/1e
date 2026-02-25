@@ -190,3 +190,33 @@ Payload messages length: 15
 ----------------------
 raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
 ----------------------
+RECEIVED /chat request: 1772044324430
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.amazon.in"}
+----------------------
+RECEIVED /chat request: 1772044332138
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"iPhone 17"}
+----------------------
+RECEIVED /chat request: 1772044335499
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"iPhone 17"}
+----------------------
+RECEIVED /chat request: 1772044337520
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"CLICK","elementId":3}
+----------------------
+RECEIVED /chat request: 1772044340189
+Payload messages length: 9
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"iPhone 17 Pro 256 GB available at ₹1,29,900 (M.R.P. ₹1,49,900). Shall I add to cart or proceed with purchase?
+----------------------
+Sarvam API Error: SyntaxError: Unterminated string in JSON at position 136 (line 1 column 137)
+    at JSON.parse (<anonymous>)
+    at chatWithSarvam (/Users/vee/Web Dev/1e/backend/sarvam.js:144:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/vee/Web Dev/1e/backend/index.js:38:24
