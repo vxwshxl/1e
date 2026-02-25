@@ -199,11 +199,19 @@ chatInput.addEventListener('input', function () {
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        sendMessage();
+        if (!isAgentRunning) {
+            sendMessage();
+        }
     }
 });
 
-sendBtn.addEventListener('click', sendMessage);
+sendBtn.addEventListener('click', () => {
+    if (isAgentRunning) {
+        stopAgentLoop();
+    } else {
+        sendMessage();
+    }
+});
 const welcomeScreenHTML = `
                 <div class="welcome-screen">
                     <div class="welcome-icon">
@@ -220,7 +228,7 @@ clearBtn.addEventListener('click', async () => {
     chatContainer.innerHTML = welcomeScreenHTML;
     // RESET AGENT STATE
     chatHistory = [];
-    isAgentRunning = false;
+    stopAgentLoop();
 
     // Reset translation back to default
     if (translateLang.value !== "") {
@@ -289,7 +297,42 @@ translateLang.addEventListener('change', async (e) => {
 
 let chatHistory = [];
 let isAgentRunning = false;
-const MAX_AUTONOMOUS_STEPS = 8;
+let userRequestedStop = false;
+let currentAbortController = null;
+
+function setButtonState(running) {
+    if (running) {
+        sendBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+            </svg>
+        `;
+        sendBtn.classList.add('stop-btn');
+    } else {
+        sendBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+        `;
+        sendBtn.classList.remove('stop-btn');
+    }
+}
+
+function stopAgentLoop() {
+    if (isAgentRunning) {
+        userRequestedStop = true;
+        isAgentRunning = false;
+        if (currentAbortController) {
+            currentAbortController.abort();
+            currentAbortController = null;
+        }
+        setButtonState(false);
+        // Remove typing indicator immediately if it exists
+        const typingElements = document.querySelectorAll('.typing-indicator');
+        typingElements.forEach(el => el.remove());
+        addMessage("Execution stopped by user.", "ai", true);
+    }
+}
 
 async function sendMessage() {
     if (isAgentRunning) return;
@@ -318,14 +361,14 @@ async function sendMessage() {
 
 async function runAgentLoop() {
     isAgentRunning = true;
-    let stepCount = 0;
+    userRequestedStop = false;
+    setButtonState(true);
 
     const typingId = 'typing-' + Date.now();
     addTypingIndicator(typingId);
 
     try {
-        while (stepCount < MAX_AUTONOMOUS_STEPS) {
-            stepCount++;
+        while (isAgentRunning && !userRequestedStop) {
 
             // 1. Extract context from current tab
             const context = await getPageContext();
@@ -334,9 +377,12 @@ async function runAgentLoop() {
             const modelSelect = document.getElementById('model-select');
             const selectedModel = modelSelect ? modelSelect.value : 'sarvam';
 
+            currentAbortController = new AbortController();
+
             const response = await fetch(`${BACKEND_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal: currentAbortController.signal,
                 body: JSON.stringify({
                     messages: chatHistory,
                     page_content: context.page_content,
@@ -346,6 +392,8 @@ async function runAgentLoop() {
                     model: selectedModel
                 })
             });
+
+            currentAbortController = null;
 
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
@@ -398,6 +446,8 @@ async function runAgentLoop() {
                     await new Promise(r => setTimeout(r, 1500));
                 }
 
+                if (userRequestedStop) break;
+
                 // Prompt the AI to continue based on new context
                 chatHistory.push({
                     role: "user",
@@ -418,19 +468,22 @@ async function runAgentLoop() {
             }
         }
 
-        if (stepCount >= MAX_AUTONOMOUS_STEPS) {
+        removeElement(typingId);
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Fetch aborted by user.');
+        } else {
+            console.error('Chat error:', error);
             removeElement(typingId);
-            addMessage("Paused execution to prevent infinite loops. You can type instructions to continue.", 'ai', true);
+            addMessage("1e encountered an error connecting to the backend. Please verify your connection.", 'ai', 'error');
         }
 
-    } catch (error) {
-        console.error('Chat error:', error);
-        removeElement(typingId);
-        addMessage("1e encountered an error connecting to the backend. Please verify your connection.", 'ai', 'error');
         // On error, let the user retry
         isAgentRunning = false;
+        setButtonState(false);
     } finally {
         isAgentRunning = false;
+        setButtonState(false);
     }
 }
 

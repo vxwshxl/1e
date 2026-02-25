@@ -399,6 +399,22 @@ textarea::placeholder {
     margin-left: 2px;
 }
 
+.send-btn.stop-btn {
+    background-color: transparent;
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.send-btn.stop-btn:hover {
+    background-color: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+}
+
+.send-btn.stop-btn svg {
+    margin-left: 0;
+}
+
 .mic-btn {
     margin-left: 4px;
 }
