@@ -14,86 +14,120 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
 });
 
+let nextElementId = 1;
+
 function extractContext() {
+    // Clean up old IDs
+    document.querySelectorAll('[data-galixent-id]').forEach(el => el.removeAttribute('data-galixent-id'));
+    nextElementId = 1;
+
     // Limit text to avoid payload size issues
     const text = document.body.innerText.substring(0, 3000);
 
-    const buttons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'))
-        .slice(0, 30)
-        .map(b => (b.innerText || b.value || b.getAttribute('aria-label') || "").trim())
-        .filter(Boolean);
+    const inputs = [];
+    document.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(i => {
+        if (i.offsetParent !== null) {
+            const label = (i.placeholder || i.name || i.id || i.value || i.getAttribute('aria-label') || "input").substring(0, 50);
+            i.setAttribute('data-galixent-id', nextElementId);
+            inputs.push({ id: nextElementId, name: label, type: i.type || i.tagName.toLowerCase() });
+            nextElementId++;
+        }
+    });
 
-    const links = Array.from(document.querySelectorAll('a'))
-        .slice(0, 30)
-        .map(a => a.innerText.trim())
-        .filter(Boolean);
-
-    const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select'))
-        .slice(0, 30)
-        .map(i => i.placeholder || i.name || i.id || "input")
-        .filter(Boolean);
+    const buttons = [];
+    document.querySelectorAll('button, a, [role="button"]').forEach(b => {
+        if (b.offsetParent !== null) { // only visible
+            const label = (b.innerText || b.value || b.getAttribute('aria-label') || "").trim().substring(0, 50);
+            if (label && !b.hasAttribute('data-galixent-id')) {
+                b.setAttribute('data-galixent-id', nextElementId);
+                buttons.push({ id: nextElementId, text: label, tag: b.tagName.toLowerCase() });
+                nextElementId++;
+            }
+        }
+    });
 
     const headings = Array.from(document.querySelectorAll('h1, h2, h3'))
-        .slice(0, 30)
+        .slice(0, 20)
         .map(h => h.innerText.trim())
         .filter(Boolean);
 
     return {
         page_content: text,
         elements: {
-            buttons: [...new Set(buttons)],
-            links: [...new Set(links)],
-            inputs: [...new Set(inputs)],
+            interactable: [...inputs, ...buttons].slice(0, 60), // Keep payload small but prioritize inputs
             headings: [...new Set(headings)]
         }
     };
 }
 
 function executeCommand(command) {
-    if (!command || !command.action) return;
+    if (!command || !command.action) return Promise.resolve();
 
-    try {
-        const action = command.action.toUpperCase();
+    return new Promise((resolve) => {
+        try {
+            const action = command.action.toUpperCase();
 
-        if (action === "CLICK" && command.target) {
-            const targetText = command.target.toLowerCase();
-            const elements = Array.from(document.querySelectorAll('button, a, input, [role="button"]'));
-            // Find element containing the target text
-            const el = elements.find(e => {
-                const text = (e.innerText || e.value || e.placeholder || e.getAttribute('aria-label') || "").toLowerCase();
-                return text.includes(targetText);
-            });
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => el.click(), 500);
-            }
-        } else if (action === "SCROLL") {
-            const dir = (command.direction || "DOWN").toUpperCase();
-            if (dir === "DOWN") {
-                window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+            if (action === "CLICK" && command.elementId) {
+                const el = document.querySelector(`[data-galixent-id="${command.elementId}"]`);
+
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        el.click();
+                        resolve();
+                    }, 500);
+                } else {
+                    console.warn("Element not found for click (ID):", command.elementId);
+                    resolve();
+                }
+            } else if (action === "SCROLL") {
+                const dir = (command.direction || "DOWN").toUpperCase();
+                if (dir === "DOWN") {
+                    window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+                } else {
+                    window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+                }
+                setTimeout(resolve, 500);
+            } else if (action === "TYPE" && command.elementId && command.text) {
+                const el = document.querySelector(`[data-galixent-id="${command.elementId}"]`);
+
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        el.focus();
+
+                        // Deal with React/React DOM inputs
+                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+                        if (nativeInputValueSetter) {
+                            nativeInputValueSetter.call(el, command.text);
+                        } else {
+                            el.value = command.text;
+                        }
+
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+
+                        // Simulate Enter key to trigger search/submit forms automatically
+                        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+                        el.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+
+                        resolve();
+                    }, 300);
+                } else {
+                    console.warn("Element not found for type (ID):", command.elementId);
+                    resolve();
+                }
+            } else if (action === "NAVIGATE" && command.url) {
+                window.location.href = command.url;
+                // Don't resolve immediately; let the page unload
             } else {
-                window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+                resolve();
             }
-        } else if (action === "TYPE" && command.target && command.text) {
-            const targetText = command.target.toLowerCase();
-            const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea'));
-            const el = inputs.find(e => {
-                const text = (e.name || e.placeholder || e.id || "").toLowerCase();
-                return text.includes(targetText);
-            });
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.focus();
-                el.value = command.text;
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        } else if (action === "NAVIGATE" && command.url) {
-            window.location.href = command.url;
+        } catch (error) {
+            console.error("Error executing command:", error);
+            resolve();
         }
-    } catch (error) {
-        console.error("Error executing command:", error);
-    }
+    });
 }
 
 function translatePage(translatedText) {

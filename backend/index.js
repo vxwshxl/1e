@@ -10,7 +10,7 @@ const port = process.env.PORT || 8000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Routes
 app.get('/', (req, res) => {
@@ -25,19 +25,22 @@ app.get('/', (req, res) => {
 });
 
 app.post('/chat', async (req, res) => {
+    console.log("RECEIVED /chat request:", Date.now());
+    console.log("Payload messages length:", req.body.messages ? req.body.messages.length : 0);
     try {
-        const { user_query, page_content, elements } = req.body;
+        // We now expect an array of messages representing conversation history
+        const { messages, page_content, elements, url, title } = req.body;
 
-        if (!user_query) {
-            return res.status(400).json({ error: "user_query is required" });
+        if (!messages || !Array.isArray(messages)) {
+            return res.status(400).json({ error: "messages array is required" });
         }
 
-        const result = await chatWithSarvam(user_query, page_content, elements);
+        const result = await chatWithSarvam(messages, page_content, elements, url, title);
 
         // Ensure response format
         res.json({
             action: result.action || "ANSWER",
-            target: result.target,
+            elementId: result.elementId,
             direction: result.direction,
             text: result.text,
             url: result.url

@@ -3,51 +3,102 @@ const fetch = require('node-fetch');
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "sk_4wguqvkh_dQLb5VzLUJSblWRlL4F0HGhw";
 const SARVAM_MODEL_ID = process.env.SARVAM_MODEL_ID || "sarvam-m";
 
-async function chatWithSarvam(userQuery, pageContent, elements = {}) {
-    const url = "https://api.sarvam.ai/v1/chat/completions";
+async function chatWithSarvam(messagesArray = [], pageContent = "", elements = {}, url = "", title = "") {
+    const apiUrl = "https://api.sarvam.ai/v1/chat/completions";
 
-    const prompt = `You are a browser assistant agent. Your ONLY job is to help the user interact with the current webpage.
+    const baseSystemPrompt = `You are a strict, autonomous browser assistant. Your goal is to navigate websites, click buttons, or input text to fulfill the user's objective.
 
-You are given:
-USER GOAL:
-${userQuery}
+You MUST respond ONLY in valid JSON format! Take actions dynamically!
+
+AVAILABLE ACTIONS:
+CLICK     - To click a button or link. Requires 'elementId'.
+SCROLL    - To scroll the page. Requires 'direction' ("UP" or "DOWN").
+TYPE      - To input text. Requires 'elementId' and 'text'.
+NAVIGATE  - To go to a URL dynamically. Requires 'url'.
+ANSWER    - To talk to the user ONLY if you successfully completed the task, encountered a fatal error, or need the user to input a password, OTP, or missing context.
+
+CRITICAL RULES:
+1. When you need to interact with the DOM (CLICK or TYPE), you MUST USE the 'elementId' provided in the CURRENT BROWSER CONTEXT! Do not use fuzzy text targeting.
+2. If you need user input (like an OTP), return '{"action":"ANSWER", "text":"Please provide your OTP."}'.
+3. Do NOT make up OTPs or user details if you don't know them. Ask via ANSWER.
+4. Execute only one action per turn.
+
+EXAMPLES:
+{"action":"CLICK","elementId":15}
+{"action":"SCROLL","direction":"DOWN"}
+{"action":"TYPE","elementId":12,"text":"Search query"}
+{"action":"NAVIGATE","url":"https://example.com"}
+{"action":"ANSWER","text":"Waiting for OTP..."}
+
+Respond in valid JSON only:`;
+
+    const apiMessages = [];
+
+    // Copy the messages over
+    for (let i = 0; i < messagesArray.length; i++) {
+        apiMessages.push({ ...messagesArray[i] });
+    }
+
+    if (apiMessages.length === 0) {
+        apiMessages.push({ role: "user", content: "No explicit goal provided." });
+    }
+
+    // 1. Inject base instructions into the very first message
+    if (apiMessages[0].role === "user") {
+        apiMessages[0].content = `${baseSystemPrompt}\n\nUSER GOAL (History):\n${apiMessages[0].content}`;
+    }
+
+    // 2. Inject current DOM into the MOST RECENT user message, avoiding stale context
+    let lastUserMessage = null;
+    for (let i = apiMessages.length - 1; i >= 0; i--) {
+        if (apiMessages[i].role === "user") {
+            lastUserMessage = apiMessages[i];
+            break;
+        }
+    }
+
+    if (lastUserMessage) {
+        lastUserMessage.content = `[CURRENT BROWSER CONTEXT]
+URL: ${url}
+TITLE: ${title}
 
 WEBPAGE CONTENT:
 ${pageContent ? pageContent.substring(0, 2000) : "No context provided"}
 
-AVAILABLE ELEMENTS:
+AVAILABLE INTERACTABLE ELEMENTS (map of unique IDs to elements):
 ${JSON.stringify(elements)}
+[END CONTEXT]
 
-You MUST respond ONLY in valid JSON format. Do not include any conversational text outside the JSON block.
+LATEST COMMAND:
+${lastUserMessage.content}`;
+    }
 
-AVAILABLE ACTIONS:
-CLICK     - To click a button or link
-SCROLL    - To scroll the page
-TYPE      - To input text into a field
-NAVIGATE  - To go to a URL
-ANSWER    - To respond conversationally to the user
+    // Clean up consecutive roles: Sarvam requires strictly alternating user -> assistant -> user
+    const cleanedMessages = [];
+    if (apiMessages.length > 0) {
+        cleanedMessages.push(apiMessages[0]);
+        for (let i = 1; i < apiMessages.length; i++) {
+            const currentRole = apiMessages[i].role;
+            const prevRole = cleanedMessages[cleanedMessages.length - 1].role;
 
-EXAMPLES:
-{"action":"CLICK","target":"Login"}
-{"action":"SCROLL","direction":"DOWN"}
-{"action":"TYPE","target":"Search","text":"Rice price"}
-{"action":"NAVIGATE","url":"https://example.com"}
-{"action":"ANSWER","text":"This page shows rice prices"}
-
-Respond in valid JSON only:`;
+            if (currentRole === prevRole) {
+                // Merge consecutive messages of the same role
+                cleanedMessages[cleanedMessages.length - 1].content += `\n${apiMessages[i].content}`;
+            } else {
+                cleanedMessages.push(apiMessages[i]);
+            }
+        }
+    }
 
     const payload = {
         model: SARVAM_MODEL_ID,
-        // Using "user" role instead of "system" because some models handle instructions better as a user prompt
-        messages: [
-            { role: "user", content: prompt }
-        ],
-        temperature: 0.2, // Lower temp for more deterministic JSON
+        messages: cleanedMessages,
+        temperature: 0.1, // Even lower temp for strict JSON
         top_p: 1
     };
 
     try {
-        const response = await fetch(url, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 "api-subscription-key": SARVAM_API_KEY,
@@ -58,15 +109,20 @@ Respond in valid JSON only:`;
 
         if (!response.ok) {
             const errText = await response.text();
+            console.error("Sarvam API HTTP Error:", errText);
             throw new Error(`HTTP error! status: ${response.status}, message: ${errText}`);
         }
 
         const data = await response.json();
-        let content = data.choices[0].message.content;
+        let content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : null;
+
+        console.log("----------------------");
+        console.log("raw content from sarvam:", content);
+        console.log("----------------------");
 
         if (!content || content.trim() === "") {
-            console.log("Sarvam API returned empty content. Reprompting or returning default answer.");
-            return { action: "ANSWER", text: "I'm having trouble understanding right now. Please try again." };
+            console.log("Sarvam API returned empty content.");
+            return { action: "ANSWER", text: "I'm having trouble understanding right now. Please try again or provide more details." };
         }
 
         // Clean up JSON markup if present
@@ -74,7 +130,6 @@ Respond in valid JSON only:`;
 
         // One last check before parsing
         if (!content.startsWith('{')) {
-            // Model hallucinated some text before the JSON
             const match = content.match(/\{[\s\S]*\}/);
             if (match) {
                 content = match[0];
