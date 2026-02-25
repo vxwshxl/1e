@@ -15,7 +15,7 @@ app.use(express.json({ limit: '50mb' }));
 // Routes
 app.get('/', (req, res) => {
     res.json({
-        message: "Welcome to Galixent API!",
+        message: "Welcome to 1e API!",
         status: "online",
         endpoints: {
             chat: "POST /chat",
@@ -50,7 +50,7 @@ app.post('/chat', async (req, res) => {
         console.error("Chat endpoint error:", error);
         res.status(500).json({
             action: "ANSWER",
-            text: "Galixent may be incorrect. Please verify important information."
+            text: "1e may be incorrect. Please verify important information."
         });
     }
 });
@@ -74,12 +74,12 @@ app.post('/translate', async (req, res) => {
     } catch (error) {
         console.error("Translate endpoint error:", error);
         res.status(500).json({
-            error: "Translation failed. Galixent may be incorrect. Please verify important information."
+            error: "Translation failed. 1e may be incorrect. Please verify important information."
         });
     }
 });
 
 // Start server
 app.listen(port, () => {
-    console.log(`Galixent backend listening at http://localhost:${port}`);
+    console.log(`1e backend listening at http://localhost:${port}`);
 });

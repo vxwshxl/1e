@@ -1,6 +1,6 @@
-# Galixent — Regional Language AI Browser Assistant
+# 1e — Regional Language AI Browser Assistant
 
-Galixent is a production-ready, AI-powered browser sidebar assistant built using Chrome Extension MV3, FastAPI, Sarvam AI, and Bhashini AI.
+1e is a production-ready, AI-powered browser sidebar assistant built using Chrome Extension MV3, FastAPI, Sarvam AI, and Bhashini AI.
 
 ## Features
 
@@ -19,7 +19,7 @@ Galixent is a production-ready, AI-powered browser sidebar assistant built using
 ## Project Structure
 
 ```
-galixent/
+1e/
 │
 ├ manifest.json       # Chrome Extension MV3 Manifest
 ├ background.js       # Background service worker (sidebar configuration)
@@ -45,9 +45,9 @@ galixent/
 2. Go to `chrome://extensions/`.
 3. Enable **Developer mode** in the top right corner.
 4. Click on **Load unpacked** in the top left.
-5. Select the `galixent` root folder (where `manifest.json` is located).
-6. Pin the Galixent extension to your toolbar.
-7. Click the Galixent icon to open the Sidebar Assistant on any website!
+5. Select the `1e` root folder (where `manifest.json` is located).
+6. Pin the 1e extension to your toolbar.
+7. Click the 1e icon to open the Sidebar Assistant on any website!
 
 ---
 
@@ -56,7 +56,7 @@ galixent/
 1. Ensure you have [Node.js](https://nodejs.org/) installed.
 2. Navigate to the `backend` directory:
    ```bash
-   cd galixent/backend
+   cd 1e/backend
    ```
 3. Install dependencies:
    ```bash
@@ -74,7 +74,7 @@ galixent/
 
 1. Ensure the Python backend is running.
 2. Open a webpage (e.g., Wikipedia, a blog, or a login page) in Chrome.
-3. Click the **Galixent Extension Icon** to open the side panel.
+3. Click the **1e Extension Icon** to open the side panel.
 4. **Test Prompts:**
    - *"Explain this page"* (Agent will summarize based on page context)
    - *"Click login"* (Agent will find and click the nearest login button)
@@ -86,5 +86,5 @@ galixent/
 
 ## Error Handling
 
-- If API requests fail or models are unreachable, you will see a fallback error in chat: *"Galixent may be incorrect. Please verify important information."*
+- If API requests fail or models are unreachable, you will see a fallback error in chat: *"1e may be incorrect. Please verify important information."*
 - If elements (for click/type) are obscured or missing, the agent skips execution gracefully and reports fallback.

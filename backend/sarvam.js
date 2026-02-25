@@ -141,7 +141,7 @@ ${lastUserMessage.content}`;
 
     } catch (error) {
         console.error("Sarvam API Error:", error);
-        return { action: "ANSWER", text: "Galixent may be incorrect. Please verify important information." };
+        return { action: "ANSWER", text: "1e may be incorrect. Please verify important information." };
     }
 }
 

@@ -72,7 +72,7 @@ translateLang.addEventListener('change', async (e) => {
             throw new Error("Missing translated texts from backend");
         }
     } catch (error) {
-        addMessage("Translation failed. Galixent may be incorrect. Please verify connection.", "ai", true);
+        addMessage("Translation failed. 1e may be incorrect. Please verify connection.", "ai", true);
         console.error(error);
         translateLang.value = "";
     } finally {
@@ -192,7 +192,7 @@ async function runAgentLoop() {
     } catch (error) {
         console.error('Chat error:', error);
         removeElement(typingId);
-        addMessage("Galixent encountered an error connecting to the backend. Please verify your connection.", 'ai', true);
+        addMessage("1e encountered an error connecting to the backend. Please verify your connection.", 'ai', true);
         // On error, let the user retry
         isAgentRunning = false;
     } finally {

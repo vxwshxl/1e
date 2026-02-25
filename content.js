@@ -24,7 +24,7 @@ let nextElementId = 1;
 
 function extractContext() {
     // Clean up old IDs
-    document.querySelectorAll('[data-galixent-id]').forEach(el => el.removeAttribute('data-galixent-id'));
+    document.querySelectorAll('[data-1e-id]').forEach(el => el.removeAttribute('data-1e-id'));
     nextElementId = 1;
 
     // Limit text to avoid payload size issues
@@ -34,7 +34,7 @@ function extractContext() {
     document.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(i => {
         if (i.offsetParent !== null) {
             const label = (i.placeholder || i.name || i.id || i.value || i.getAttribute('aria-label') || "input").substring(0, 50);
-            i.setAttribute('data-galixent-id', nextElementId);
+            i.setAttribute('data-1e-id', nextElementId);
             inputs.push({ id: nextElementId, name: label, type: i.type || i.tagName.toLowerCase() });
             nextElementId++;
         }
@@ -44,8 +44,8 @@ function extractContext() {
     document.querySelectorAll('button, a, [role="button"]').forEach(b => {
         if (b.offsetParent !== null) { // only visible
             const label = (b.innerText || b.value || b.getAttribute('aria-label') || "").trim().substring(0, 50);
-            if (label && !b.hasAttribute('data-galixent-id')) {
-                b.setAttribute('data-galixent-id', nextElementId);
+            if (label && !b.hasAttribute('data-1e-id')) {
+                b.setAttribute('data-1e-id', nextElementId);
                 buttons.push({ id: nextElementId, text: label, tag: b.tagName.toLowerCase() });
                 nextElementId++;
             }
@@ -74,7 +74,7 @@ function executeCommand(command) {
             const action = command.action.toUpperCase();
 
             if (action === "CLICK" && command.elementId) {
-                const el = document.querySelector(`[data-galixent-id="${command.elementId}"]`);
+                const el = document.querySelector(`[data-1e-id="${command.elementId}"]`);
 
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -95,7 +95,7 @@ function executeCommand(command) {
                 }
                 setTimeout(resolve, 500);
             } else if (action === "TYPE" && command.elementId && command.text) {
-                const el = document.querySelector(`[data-galixent-id="${command.elementId}"]`);
+                const el = document.querySelector(`[data-1e-id="${command.elementId}"]`);
 
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });

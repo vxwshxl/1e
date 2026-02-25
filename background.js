@@ -1,6 +1,6 @@
 // Basic background tasks can be added here
 chrome.runtime.onInstalled.addListener(() => {
-    console.log("Galixent extension installed");
+    console.log("1e extension installed");
 });
 
 // Remove invalid behavioral config that was breaking the service worker

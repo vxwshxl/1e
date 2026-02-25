@@ -1,7 +1,7 @@
 {
-    "name": "galixent-backend",
+    "name": "1e-backend",
     "version": "1.0.0",
-    "description": "Galixent AI Backend Server",
+    "description": "1e AI Backend Server",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",

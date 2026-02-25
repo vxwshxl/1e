@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Galixent",
+  "name": "1e",
   "version": "1.0.0",
   "description": "Regional Language AI Browser Assistant",
   "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
@@ -15,7 +15,7 @@
     }
   ],
   "action": {
-    "default_title": "Open Galixent Assistant"
+    "default_title": "Open 1e Assistant"
   },
   "side_panel": {
     "default_path": "sidebar.html"
