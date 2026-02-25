@@ -260,3 +260,18 @@ Payload messages length: 9
 ----------------------
 raw content from sarvam:  {"action":"ANSWER","text":"The search results show products related to 'airport' but not actual airport information. To proceed, please clarify if you want to:\n1. Buy products from the search results\n2. Get flight/airport travel information\n3. Something else?"}
 ----------------------
+RECEIVED /chat request: 1772045042894
+Payload messages length: 11
+----------------------
+raw content from sarvam:  {"action":"TRANSLATE","language":"hi"}
+----------------------
+RECEIVED /chat request: 1772045075518
+Payload messages length: 13
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The search results show products related to 'airport' but not actual airport information. To proceed, please clarify if you want to:\n1. Buy products from the search results\n2. Get flight/airport travel information\n3. Something else?
+----------------------
+Sarvam API Error: SyntaxError: Unterminated string in JSON at position 262 (line 1 column 263)
+    at JSON.parse (<anonymous>)
+    at chatWithSarvam (/Users/vee/Web Dev/1e/backend/sarvam.js:144:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/vee/Web Dev/1e/backend/index.js:38:24
