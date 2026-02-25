@@ -34,11 +34,17 @@ const welcomeScreenHTML = `
                 </div>
 `;
 
-clearBtn.addEventListener('click', () => {
+clearBtn.addEventListener('click', async () => {
     chatContainer.innerHTML = welcomeScreenHTML;
     // RESET AGENT STATE
     chatHistory = [];
     isAgentRunning = false;
+
+    // Reset translation back to default
+    if (translateLang.value !== "") {
+        translateLang.value = "";
+        await revertPageText();
+    }
 });
 
 async function performTranslation(targetLang, langName) {

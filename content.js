@@ -50,9 +50,9 @@ function extractContext() {
 
     const buttons = [];
     try {
-        document.querySelectorAll('button, a, [role="button"]').forEach(b => {
+        document.querySelectorAll('button, a, [role="button"], [role="link"], [role="tab"], [tabindex], [onclick], li, .card, .track01').forEach(b => {
             if (b.offsetParent !== null) { // only visible
-                const label = (b.innerText || b.value || b.getAttribute('aria-label') || "").trim().substring(0, 50);
+                const label = (b.innerText || b.value || b.getAttribute('aria-label') || "").trim().substring(0, 100);
                 if (label && !b.hasAttribute('data-1e-id')) {
                     b.setAttribute('data-1e-id', nextElementId);
                     buttons.push({ id: nextElementId, text: label, tag: b.tagName.toLowerCase() });
@@ -77,7 +77,7 @@ function extractContext() {
     return {
         page_content: text,
         elements: {
-            interactable: [...inputs, ...buttons].slice(0, 60), // Keep payload small but prioritize inputs
+            interactable: [...inputs, ...buttons].slice(0, 150), // Keep payload broad enough for complex pages
             headings: [...new Set(headings)]
         }
     };
