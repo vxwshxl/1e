@@ -15,6 +15,7 @@ CLICK     - To click a button or link. Requires 'elementId'.
 SCROLL    - To scroll the page. Requires 'direction' ("UP" or "DOWN").
 TYPE      - To input text. Requires 'elementId' and 'text'.
 NAVIGATE  - To go to a URL dynamically. Requires 'url'.
+TRANSLATE - To translate the page content. Requires 'language' code (e.g., 'as' for Assamese, 'bn' for Bengali, 'brx' for Bodo, 'hi' for Hindi, 'en' for English).
 ANSWER    - To talk to the user ONLY if you successfully completed the task, encountered a fatal error, or need the user to input a password, OTP, or missing context.
 
 CRITICAL RULES:
@@ -23,12 +24,14 @@ CRITICAL RULES:
 3. If you need user input (like an OTP) or confirmation, return '{"action":"ANSWER", "text":"..."}'.
 4. Do NOT make up OTPs or user details if you don't know them. Ask via ANSWER.
 5. Execute only one action per turn.
+6. When translating, automatically use the 2-letter or 3-letter language code based on the user's request.
 
 EXAMPLES:
 {"action":"CLICK","elementId":15}
 {"action":"SCROLL","direction":"DOWN"}
 {"action":"TYPE","elementId":12,"text":"Search query"}
 {"action":"NAVIGATE","url":"https://example.com"}
+{"action":"TRANSLATE","language":"as"}
 {"action":"ANSWER","text":"Waiting for OTP..."}
 
 Respond in valid JSON only:`;

@@ -37,13 +37,13 @@ app.post('/chat', async (req, res) => {
 
         const result = await chatWithSarvam(messages, page_content, elements, url, title);
 
-        // Ensure response format
         res.json({
             action: result.action || "ANSWER",
             elementId: result.elementId,
             direction: result.direction,
             text: result.text,
-            url: result.url
+            url: result.url,
+            language: result.language
         });
 
     } catch (error) {

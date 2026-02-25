@@ -1,62 +1,40 @@
 
-> galixent-backend@1.0.0 start
+> 1e-backend@1.0.0 start
 > node index.js
 
-Galixent backend listening at http://localhost:8000
+1e backend listening at http://localhost:8000
+RECEIVED /chat request: 1772035894573
+Payload messages length: 1
 ----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Hello! How can I assist you today?"}
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://studio.intellaris.co/"}
 ----------------------
+RECEIVED /chat request: 1772035901238
+Payload messages length: 3
 ----------------------
-raw content from sarvam:  {"action":"NAVIGATE","url":"https://uidai.gov.in/"}
+raw content from sarvam:  {"action":"TRANSLATE","language":"brx"}
 ----------------------
+RECEIVED /chat request: 1772035903850
+Payload messages length: 5
 ----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Navigation to Aadhaar site failed. Google page content shows no interactive elements. Please verify if you want to proceed with official UIDAI portal (https://uidai.gov.in/) or need help with Aadhaar download steps."}
+raw content from sarvam:  {"action":"ANSWER","text":"Page translated to Bodo. No further actions required as the goal was to translate the page. Let me know if you need anything else!"}
 ----------------------
+RECEIVED /chat request: 1772036273405
+Payload messages length: 1
 ----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Hello! How can I assist you today?"}
+raw content from sarvam:  ```json
+{
+  "action": "NAVIGATE",
+  "url": "https://codewar.aec.ac.in"
+}
+```
 ----------------------
+RECEIVED /chat request: 1772036281027
+Payload messages length: 3
 ----------------------
-raw content from sarvam:  {"action":"NAVIGATE","url":"https://uidai.gov.in/"}
+raw content from sarvam:  {"action":"CLICK","elementId":4}
 ----------------------
+RECEIVED /chat request: 1772036283105
+Payload messages length: 5
 ----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Navigation to Aadhaar site blocked. Please provide OTP or check browser settings."}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Unable to navigate to 'veeshal.me' - Google page has no available interactive elements. Please provide more context or check URL validity."}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"The site appears to be related to a Sarvam Model interface for a hackathon event. However, the current page content shows a script injection block and no interactable elements. More context or page reload might be required to analyze properly."}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.amazon.com"}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Unable to proceed. The page at https://chatgpt.com/c/699ebd77-72a0-83a4-ba6f-a513bb070abd appears to be blocking script execution and contains no interactable elements. This prevents navigation to Amazon or any other website. Please check browser security settings or try a different browser."}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.amazon.com"}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"CLICK","elementId":2}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"bicycle"}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"CLICK","elementId":9}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"bicycle"}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"CLICK","elementId":9}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"bicycle"}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"CLICK","elementId":9}
-----------------------
-----------------------
-raw content from sarvam:  {"action":"ANSWER","text":"Hello! How can I assist you today?"}
+raw content from sarvam:  {"action":"ANSWER","text":"Successfully entered CODESTELLATION track. Now searching for Regional Language AI Assistant content within this track. Please wait while I analyze available resources..."}
 ----------------------

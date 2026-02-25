@@ -41,22 +41,19 @@ clearBtn.addEventListener('click', () => {
     isAgentRunning = false;
 });
 
-translateLang.addEventListener('change', async (e) => {
-    const targetLang = e.target.value;
-
+async function performTranslation(targetLang, langName) {
     if (!targetLang) {
         revertPageText();
         addMessage("Reverted to original page language.", "ai");
         return;
     }
 
-    const langName = e.target.options[e.target.selectedIndex].text;
     translateLang.disabled = true;
+    translateLang.value = targetLang;
 
     try {
         addMessage(`Scanning and translating page to ${langName}...`, "ai");
 
-        // Tell content script to gather text nodes
         const texts = await getPageTextNodes();
 
         if (!texts || texts.length === 0) {
@@ -85,6 +82,12 @@ translateLang.addEventListener('change', async (e) => {
     } finally {
         translateLang.disabled = false;
     }
+}
+
+translateLang.addEventListener('change', async (e) => {
+    const targetLang = e.target.value;
+    const langName = e.target.options[e.target.selectedIndex].text;
+    await performTranslation(targetLang, langName);
 });
 
 let chatHistory = [];
@@ -155,19 +158,36 @@ async function runAgentLoop() {
                 if (data.action === "TYPE") msgText = `Typing "${data.text}" into element #${data.elementId}`;
 
                 removeElement(typingId);
-                addMessage(msgText, 'ai');
 
-                // Add typing indicator back for the next step 
-                addTypingIndicator(typingId);
+                if (data.action === "TRANSLATE" && data.language) {
+                    const selectEl = document.getElementById('translate-lang');
+                    let langName = data.language;
+                    for (let i = 0; i < selectEl.options.length; i++) {
+                        if (selectEl.options[i].value === data.language) {
+                            langName = selectEl.options[i].text;
+                            break;
+                        }
+                    }
 
-                // Execute command
-                await executeCommandInPage(data);
+                    // Add typing indicator back for the translation step 
+                    addTypingIndicator(typingId);
+
+                    await performTranslation(data.language, langName);
+                } else {
+                    addMessage(msgText, 'ai');
+
+                    // Add typing indicator back for the next step 
+                    addTypingIndicator(typingId);
+
+                    // Execute command
+                    await executeCommandInPage(data);
+                }
 
                 // We need to give the page time to react (navigate, modal open, DOM update)
                 // If it's a navigation, wait longer for the new page to load
                 if (data.action === "NAVIGATE") {
                     await new Promise(r => setTimeout(r, 6000));
-                } else {
+                } else if (data.action !== "TRANSLATE") {
                     await new Promise(r => setTimeout(r, 1500));
                 }
 
