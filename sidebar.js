@@ -263,6 +263,22 @@ async function getActiveTab() {
     return tab;
 }
 
+async function injectContentScriptIfNeeded(tabId) {
+    return new Promise((resolve) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ['content.js']
+        }, () => {
+            if (chrome.runtime.lastError) {
+                console.warn("Script injection failed:", chrome.runtime.lastError.message);
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
+    });
+}
+
 async function getPageContext() {
     const tab = await getActiveTab();
     if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
@@ -270,10 +286,23 @@ async function getPageContext() {
     }
 
     return new Promise((resolve) => {
-        chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_CONTEXT" }, (response) => {
+        chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_CONTEXT" }, async (response) => {
             if (chrome.runtime.lastError) {
-                console.warn(chrome.runtime.lastError.message);
-                resolve({ page_content: "Script injection pending or blocked.", elements: {}, url: tab.url, title: tab.title });
+                console.warn("Initial context extraction failed:", chrome.runtime.lastError.message, "Attempting injection...");
+                const injected = await injectContentScriptIfNeeded(tab.id);
+                if (injected) {
+                    // Retry once
+                    chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_CONTEXT" }, (retryResponse) => {
+                        if (chrome.runtime.lastError) {
+                            console.warn("Retry failed:", chrome.runtime.lastError.message);
+                            resolve({ page_content: "Script injection failed on this page. Try refreshing.", elements: {}, url: tab.url, title: tab.title });
+                        } else {
+                            resolve({ ...(retryResponse || { page_content: "", elements: {} }), url: tab.url, title: tab.title });
+                        }
+                    });
+                } else {
+                    resolve({ page_content: "Script injection pending or blocked.", elements: {}, url: tab.url, title: tab.title });
+                }
             } else {
                 resolve({ ...(response || { page_content: "", elements: {} }), url: tab.url, title: tab.title });
             }
@@ -286,9 +315,17 @@ async function getPageTextNodes() {
     if (!tab) return null;
 
     return new Promise((resolve) => {
-        chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_TEXT_NODES" }, (response) => {
+        chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_TEXT_NODES" }, async (response) => {
             if (chrome.runtime.lastError) {
-                resolve(null);
+                console.warn("Initial extract text nodes failed, attempting injection...");
+                const injected = await injectContentScriptIfNeeded(tab.id);
+                if (injected) {
+                    chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_TEXT_NODES" }, (retryResponse) => {
+                        resolve(retryResponse ? retryResponse.texts : null);
+                    });
+                } else {
+                    resolve(null);
+                }
             } else {
                 resolve(response.texts || null);
             }
@@ -305,13 +342,26 @@ async function executeCommandInPage(command) {
         return;
     }
 
-    chrome.tabs.sendMessage(tab.id, {
-        type: "EXECUTE_COMMAND",
-        command: command
-    }, () => {
-        if (chrome.runtime.lastError) {
-            console.warn("Execute command error:", chrome.runtime.lastError.message);
-        }
+    return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, {
+            type: "EXECUTE_COMMAND",
+            command: command
+        }, async () => {
+            if (chrome.runtime.lastError) {
+                console.warn("Initial execute command error:", chrome.runtime.lastError.message);
+                const injected = await injectContentScriptIfNeeded(tab.id);
+                if (injected) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: "EXECUTE_COMMAND",
+                        command: command
+                    }, resolve);
+                } else {
+                    resolve();
+                }
+            } else {
+                resolve();
+            }
+        });
     });
 }
 
@@ -319,9 +369,25 @@ async function replacePageTextNodes(translatedTexts) {
     const tab = await getActiveTab();
     if (!tab) return;
 
-    chrome.tabs.sendMessage(tab.id, {
-        type: "INJECT_TRANSLATION",
-        translatedTexts: translatedTexts
+    return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, {
+            type: "INJECT_TRANSLATION",
+            translatedTexts: translatedTexts
+        }, async () => {
+            if (chrome.runtime.lastError) {
+                const injected = await injectContentScriptIfNeeded(tab.id);
+                if (injected) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: "INJECT_TRANSLATION",
+                        translatedTexts: translatedTexts
+                    }, resolve);
+                } else {
+                    resolve();
+                }
+            } else {
+                resolve();
+            }
+        });
     });
 }
 
@@ -329,5 +395,18 @@ async function revertPageText() {
     const tab = await getActiveTab();
     if (!tab) return;
 
-    chrome.tabs.sendMessage(tab.id, { type: "REVERT_TRANSLATION" });
+    return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, { type: "REVERT_TRANSLATION" }, async () => {
+            if (chrome.runtime.lastError) {
+                const injected = await injectContentScriptIfNeeded(tab.id);
+                if (injected) {
+                    chrome.tabs.sendMessage(tab.id, { type: "REVERT_TRANSLATION" }, resolve);
+                } else {
+                    resolve();
+                }
+            } else {
+                resolve();
+            }
+        });
+    });
 }

@@ -1,24 +1,28 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === "EXTRACT_CONTEXT") {
-        const context = extractContext();
-        sendResponse(context);
-    } else if (request.type === "EXECUTE_COMMAND") {
-        executeCommand(request.command);
-        sendResponse({ status: "success" });
-    } else if (request.type === "EXTRACT_TEXT_NODES") {
-        const texts = extractTextNodes();
-        sendResponse({ texts: texts });
-    } else if (request.type === "INJECT_TRANSLATION") {
-        injectTranslation(request.translatedTexts);
-        sendResponse({ status: "success" });
-    } else if (request.type === "REVERT_TRANSLATION") {
-        revertTranslation();
-        sendResponse({ status: "success" });
-    } else if (request.type === "GET_PAGE_TEXT") {
-        sendResponse({ text: document.body.innerText });
-    }
-    return true;
-});
+if (!window.__1e_content_script_injected) {
+    window.__1e_content_script_injected = true;
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === "EXTRACT_CONTEXT") {
+            const context = extractContext();
+            sendResponse(context);
+        } else if (request.type === "EXECUTE_COMMAND") {
+            executeCommand(request.command);
+            sendResponse({ status: "success" });
+        } else if (request.type === "EXTRACT_TEXT_NODES") {
+            const texts = extractTextNodes();
+            sendResponse({ texts: texts });
+        } else if (request.type === "INJECT_TRANSLATION") {
+            injectTranslation(request.translatedTexts);
+            sendResponse({ status: "success" });
+        } else if (request.type === "REVERT_TRANSLATION") {
+            revertTranslation();
+            sendResponse({ status: "success" });
+        } else if (request.type === "GET_PAGE_TEXT") {
+            sendResponse({ text: document.body.innerText });
+        }
+        return true;
+    });
+}
 
 let nextElementId = 1;
 
@@ -28,34 +32,47 @@ function extractContext() {
     nextElementId = 1;
 
     // Limit text to avoid payload size issues
-    const text = document.body.innerText.substring(0, 3000);
+    const text = document.body ? document.body.innerText.substring(0, 3000) : "";
 
     const inputs = [];
-    document.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(i => {
-        if (i.offsetParent !== null) {
-            const label = (i.placeholder || i.name || i.id || i.value || i.getAttribute('aria-label') || "input").substring(0, 50);
-            i.setAttribute('data-1e-id', nextElementId);
-            inputs.push({ id: nextElementId, name: label, type: i.type || i.tagName.toLowerCase() });
-            nextElementId++;
-        }
-    });
-
-    const buttons = [];
-    document.querySelectorAll('button, a, [role="button"]').forEach(b => {
-        if (b.offsetParent !== null) { // only visible
-            const label = (b.innerText || b.value || b.getAttribute('aria-label') || "").trim().substring(0, 50);
-            if (label && !b.hasAttribute('data-1e-id')) {
-                b.setAttribute('data-1e-id', nextElementId);
-                buttons.push({ id: nextElementId, text: label, tag: b.tagName.toLowerCase() });
+    try {
+        document.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(i => {
+            if (i.offsetParent !== null) {
+                const label = (i.placeholder || i.name || i.id || i.value || i.getAttribute('aria-label') || "input").substring(0, 50);
+                i.setAttribute('data-1e-id', nextElementId);
+                inputs.push({ id: nextElementId, name: label, type: i.type || i.tagName.toLowerCase() });
                 nextElementId++;
             }
-        }
-    });
+        });
+    } catch (e) {
+        console.warn("Failed to extract input elements", e);
+    }
 
-    const headings = Array.from(document.querySelectorAll('h1, h2, h3'))
-        .slice(0, 20)
-        .map(h => h.innerText.trim())
-        .filter(Boolean);
+    const buttons = [];
+    try {
+        document.querySelectorAll('button, a, [role="button"]').forEach(b => {
+            if (b.offsetParent !== null) { // only visible
+                const label = (b.innerText || b.value || b.getAttribute('aria-label') || "").trim().substring(0, 50);
+                if (label && !b.hasAttribute('data-1e-id')) {
+                    b.setAttribute('data-1e-id', nextElementId);
+                    buttons.push({ id: nextElementId, text: label, tag: b.tagName.toLowerCase() });
+                    nextElementId++;
+                }
+            }
+        });
+    } catch (e) {
+        console.warn("Failed to extract button elements", e);
+    }
+
+    let headings = [];
+    try {
+        headings = Array.from(document.querySelectorAll('h1, h2, h3'))
+            .slice(0, 20)
+            .map(h => h.innerText.trim())
+            .filter(Boolean);
+    } catch (e) {
+        console.warn("Failed to extract headings", e);
+    }
 
     return {
         page_content: text,
