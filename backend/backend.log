@@ -220,3 +220,43 @@ Sarvam API Error: SyntaxError: Unterminated string in JSON at position 136 (line
     at chatWithSarvam (/Users/vee/Web Dev/1e/backend/sarvam.js:144:21)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
     at async /Users/vee/Web Dev/1e/backend/index.js:38:24
+RECEIVED /chat request: 1772044729641
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.google.com/"}
+----------------------
+RECEIVED /chat request: 1772044736252
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The current page is Google's homepage in English. To proceed with the original goal of accessing the 'आधार' (Aadhaar) website, I need to navigate to the official Aadhaar portal. Should I proceed to https://uidai.gov.in?"}
+----------------------
+RECEIVED /chat request: 1772044750240
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Proceeding to official Aadhaar portal. Navigating to https://uidai.gov.in..."}
+----------------------
+RECEIVED /chat request: 1772044977501
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.amazon.in"}
+----------------------
+RECEIVED /chat request: 1772044989457
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"airport"}
+----------------------
+RECEIVED /chat request: 1772044991816
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"airport"}
+----------------------
+RECEIVED /chat request: 1772044994140
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"CLICK","elementId":3}
+----------------------
+RECEIVED /chat request: 1772044996681
+Payload messages length: 9
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The search results show products related to 'airport' but not actual airport information. To proceed, please clarify if you want to:\n1. Buy products from the search results\n2. Get flight/airport travel information\n3. Something else?"}
+----------------------

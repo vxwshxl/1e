@@ -86,12 +86,12 @@ function resetSilenceTimer() {
     clearTimeout(silenceTimer);
     silenceTimer = setTimeout(() => {
         if (isRecording) {
-            console.log('Sending message due to 3s of silence');
+            console.log('Sending message due to 2s of silence');
             if (recognition) recognition.stop();
             stopRecording();
             sendMessage();
         }
-    }, 3000);
+    }, 2000);
 }
 
 function stopRecording() {

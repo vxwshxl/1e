@@ -26,6 +26,7 @@ CRITICAL RULES:
 5. Execute only one action per turn.
 6. When translating, automatically use the 2-letter or 3-letter language code based on the user's request.
 7. DO NOT use ANSWER to announce what you are doing (e.g., "Successfully entered track..."). ANSWER is a TERMINAL action that ENDS the agent! Only use ANSWER when the ENTIRE goal is 100% achieved or you are stuck. To continue, output the next action like CLICK or SCROLL.
+8. If the user commands you to go to a website in ANY language (e.g. Hindi, Bengali), or if you suggest a URL and the user agrees (e.g. "Yes here"), you MUST issue a NAVIGATE action to that URL! Do NOT answer saying you are navigating. Just output the JSON NAVIGATE action.
 
 EXAMPLES:
 {"action":"CLICK","elementId":15}
