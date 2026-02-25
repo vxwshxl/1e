@@ -275,3 +275,138 @@ Sarvam API Error: SyntaxError: Unterminated string in JSON at position 262 (line
     at chatWithSarvam (/Users/vee/Web Dev/1e/backend/sarvam.js:144:21)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
     at async /Users/vee/Web Dev/1e/backend/index.js:38:24
+RECEIVED /chat request: 1772047083857
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.amazon.in"}
+----------------------
+RECEIVED /chat request: 1772047090725
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"bicycle"}
+----------------------
+RECEIVED /chat request: 1772047093089
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"bicycle"}
+----------------------
+RECEIVED /chat request: 1772047095091
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772047097138
+Payload messages length: 9
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772047099174
+Payload messages length: 11
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772047101570
+Payload messages length: 13
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772047103675
+Payload messages length: 15
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772047211700
+Payload messages length: 1
+----------------------
+raw content from sarvam:  ```json
+{
+  "action": "NAVIGATE",
+  "url": "https://en.wikipedia.org/"
+}
+```
+----------------------
+RECEIVED /chat request: 1772047218616
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"দুর্গাপূজা"}
+----------------------
+RECEIVED /chat request: 1772047220971
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":2,"text":"দুর্গাপূজা"}
+----------------------
+RECEIVED /chat request: 1772047223020
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"TRANSLATE","language":"bn"}
+----------------------
+RECEIVED /chat request: 1772047251901
+Payload messages length: 9
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"দুর্গাপূজা সম্পর্কিত তথ্য বাংলায় অনুবাদ করা হয়েছে। উইকিপিডিয়া পেজে দুর্গাপূজার বিষয়ে বিস্তারিত তথ্য পাওয়া গেছে।"}
+----------------------
+RECEIVED /chat request: 1772047517561
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://en.wikipedia.org/wiki/Durga_Puja"}
+----------------------
+RECEIVED /chat request: 1772047524413
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TRANSLATE","language":"bn"}
+----------------------
+RECEIVED /chat request: 1772047554396
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"দুর্গাপূজা সম্পর্কে বাংলা অনুবাদ সম্পন্ন হয়েছে। উইকিপিডিয়া পেজের বিষয়বস্তু বাংলায় প্রদর্শিত হচ্ছে।"}
+----------------------
+RECEIVED /chat request: 1772047750258
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Hello! How can I assist you with Durga Puja information or any other queries?"}
+----------------------
+RECEIVED /chat request: 1772047754853
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"I am a strict, autonomous browser assistant designed to navigate websites and perform tasks like clicking buttons, inputting text, and translating content. I specialize in Durga Puja information and cultural topics. How can I assist you today?"}
+----------------------
+RECEIVED /chat request: 1772048056314
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The term 'veeshal d bodosa' does not appear to be directly related to Durga Puja or its associated rituals, deities, or regional celebrations as per the provided Wikipedia content. It might be a misspelling or a term from a specific regional dialect. Could you clarify or provide more context? For instance, are you referring to a local tradition, a deity, or a cultural practice in a particular Indian state?"}
+----------------------
+RECEIVED /chat request: 1772048194919
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The term 'veeshal d bodosa' does not appear to be directly related to Durga Puja or its associated rituals, deities, or regional celebrations as per the provided Wikipedia content. It might be a misspelling or a term from a specific regional dialect. Could you clarify or provide more context? For instance, are you referring to a local tradition, a deity, or a cultural practice in a particular Indian state?"}
+----------------------
+RECEIVED /chat request: 1772048202812
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Hi! How can I assist you today?"}
+----------------------
+RECEIVED /chat request: 1772048207349
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":1,"text":"veeshal d bodosa"}
+----------------------
+RECEIVED /chat request: 1772048209331
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"TYPE","elementId":1,"text":"veeshal d bodosa"}
+----------------------
+RECEIVED /chat request: 1772048211286
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"There is no readily available information about 'veeshal d bodosa' in the current Google search results. Would you like me to perform a web search or provide details about another topic?"}
+----------------------
+RECEIVED /chat request: 1772048338046
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Hi! How can I assist you today?"}
+----------------------
+RECEIVED /chat request: 1772048344917
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"I'm sorry, I cannot answer that question based on the provided context. The available information only shows an account name 'The Detective Coder' associated with the email veebodosa@gmail.com in the Google header."}
+----------------------

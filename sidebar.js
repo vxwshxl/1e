@@ -312,6 +312,9 @@ async function runAgentLoop() {
             const context = await getPageContext();
 
             // 2. Send history and context to backend
+            const modelSelect = document.getElementById('model-select');
+            const selectedModel = modelSelect ? modelSelect.value : 'sarvam';
+
             const response = await fetch(`${BACKEND_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -320,7 +323,8 @@ async function runAgentLoop() {
                     page_content: context.page_content,
                     elements: context.elements,
                     url: context.url,
-                    title: context.title
+                    title: context.title,
+                    model: selectedModel
                 })
             });
 
@@ -616,10 +620,23 @@ async function revertPageText() {
 }
 
 // -------------------------------------------------------------
-// Auto-Restore Persistent Translation State logic
+// Auto-Restore Persistent Translation and Model State logic
 // -------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
-    const data = await chrome.storage.local.get(['targetLang', 'langName']);
+    const data = await chrome.storage.local.get(['targetLang', 'langName', 'selectedModel']);
+
+    const modelSelect = document.getElementById('model-select');
+    if (modelSelect && data.selectedModel) {
+        modelSelect.value = data.selectedModel;
+    }
+
+    if (modelSelect) {
+        modelSelect.addEventListener('change', async (e) => {
+            await chrome.storage.local.set({ selectedModel: e.target.value });
+            addMessage(`Switched AI model to ${e.target.options[e.target.selectedIndex].text}`, "ai", "success");
+        });
+    }
+
     if (data.targetLang && data.langName) {
         translateLang.value = data.targetLang;
         addMessage(`Restoring translation to ${data.langName} for this page...`, "ai");

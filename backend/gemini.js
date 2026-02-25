@@ -1,11 +1,16 @@
-const fetch = require('node-fetch');
+const { GoogleGenAI } = require('@google/genai');
 
-const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "sk_4wguqvkh_dQLb5VzLUJSblWRlL4F0HGhw";
-const SARVAM_MODEL_ID = process.env.SARVAM_MODEL_ID || "sarvam-m";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBNWsI20kwS64RoJ1FMkNRR9AF7sDbOm9Q";
+const GEMINI_MODEL_ID = process.env.GEMINI_MODEL_ID || "gemini-flash-latest";
+const GEMINI_TEMPERATURE = parseFloat(process.env.GEMINI_TEMPERATURE || "1");
+const GEMINI_TOP_P = parseFloat(process.env.GEMINI_TOP_P || "0.95");
+const GEMINI_TOP_K = parseInt(process.env.GEMINI_TOP_K || "64", 10);
 
-async function chatWithSarvam(messagesArray = [], pageContent = "", elements = {}, url = "", title = "") {
-    const apiUrl = "https://api.sarvam.ai/v1/chat/completions";
+const ai = new GoogleGenAI({
+    apiKey: GEMINI_API_KEY,
+});
 
+async function chatWithGemini(messagesArray = [], pageContent = "", elements = {}, url = "", title = "") {
     const baseSystemPrompt = `You are an intelligent, 1e AI assistant. You can perform actions on the user's current webpage AND answer general knowledge questions.
 
 You MUST respond ONLY in valid JSON format!
@@ -20,13 +25,14 @@ ANSWER    - To talk to the user, answer general questions, provide information, 
 
 CRITICAL RULES:
 1. When you need to interact with the DOM (CLICK or TYPE), you MUST USE the 'elementId' provided in the CURRENT BROWSER CONTEXT! Do not use fuzzy text targeting.
-2. GENERAL QUESTIONS: If the user asks a general question (e.g., "who is X", "what is Y", "write a poem"), you MUST reply directly using the ANSWER action and your own knowledge or tools. DO NOT assume they are asking about the current webpage unless they explicitly refer to it (e.g., "summarize this page", "what does this [word on page] mean").
+2. GENERAL QUESTIONS: If the user asks a general question or wants to search for something (e.g., "who is veeshal d bodosa", "what is Y", "write a poem"), you MUST reply directly using the ANSWER action. You MUST use your built-in Google Search tool to find the answer if you don't know it! ABSOLUTELY DO NOT assume they are asking about the current webpage unless they explicitly refer to it (e.g., "summarize this page", "what does this [word on page] mean").
 3. If you need user input (like an OTP) or confirmation, return '{"action":"ANSWER", "text":"..."}'.
 4. Do NOT make up OTPs or user details if you don't know them. Ask via ANSWER.
 5. Execute only one action per turn.
 6. When translating, automatically use the 2-letter or 3-letter language code based on the user's request.
 7. To continue a multi-step browser workflow, output the next action like CLICK or SCROLL. Do not output ANSWER until the workflow represents completion or an error.
 8. If the user commands you to go to a website in ANY language (e.g. Hindi, Bengali), or if you suggest a URL and the user agrees (e.g. "Yes here"), you MUST issue a NAVIGATE action to that URL! Do NOT answer saying you are navigating. Just output the JSON NAVIGATE action.
+9. Do not provide legal or medical advice through the assistant—always redirect to official sources.
 
 EXAMPLES:
 {"action":"CLICK","elementId":15}
@@ -49,12 +55,7 @@ Respond in valid JSON only:`;
         apiMessages.push({ role: "user", content: "No explicit goal provided." });
     }
 
-    // 1. Inject base instructions into the very first message
-    if (apiMessages[0].role === "user") {
-        apiMessages[0].content = `${baseSystemPrompt}\n\nUSER GOAL (History):\n${apiMessages[0].content}`;
-    }
-
-    // 2. Inject current DOM into the MOST RECENT user message, avoiding stale context
+    // Inject current DOM into the MOST RECENT user message, avoiding stale context
     let lastUserMessage = null;
     for (let i = apiMessages.length - 1; i >= 0; i--) {
         if (apiMessages[i].role === "user") {
@@ -64,24 +65,23 @@ Respond in valid JSON only:`;
     }
 
     if (lastUserMessage) {
-        lastUserMessage.content = `[CURRENT BROWSER CONTEXT]
+        lastUserMessage.content = `[BROWSER STATE START] (IGNORE THIS if the user's COMMAND is a general question or search query. Only use this if they refer to "this page" or need browser automation)
 URL: ${url}
 TITLE: ${title}
 
-(Note: The user's query might be completely independent of this page. Only use this context if the user's latest command refers to the page or requires browser automation.)
-
-WEBPAGE CONTENT:
+CONTENT:
 ${pageContent ? pageContent.substring(0, 2000) : "No context provided"}
 
-AVAILABLE INTERACTABLE ELEMENTS (map of unique IDs to elements):
+ELEMENTS:
 ${JSON.stringify(elements)}
-[END CONTEXT]
+[BROWSER STATE END]
 
-LATEST COMMAND:
-${lastUserMessage.content}`;
+COMMAND: ${lastUserMessage.content}
+
+CRITICAL INSTRUCTION: If the COMMAND above is a general knowledge question (e.g. "who is [NAME]", "what is [THING]"), you MUST ignore the BROWSER STATE completely and use your Google Search capabilities to find the answer. Output a JSON ANSWER.`;
     }
 
-    // Clean up consecutive roles: Sarvam requires strictly alternating user -> assistant -> user
+    // Clean up consecutive roles: Gemini also prefers stricter role alternation or at least no consecutive same roles
     const cleanedMessages = [];
     if (apiMessages.length > 0) {
         cleanedMessages.push(apiMessages[0]);
@@ -98,58 +98,51 @@ ${lastUserMessage.content}`;
         }
     }
 
-    const payload = {
-        model: SARVAM_MODEL_ID,
-        messages: cleanedMessages,
-        temperature: 0.1, // Even lower temp for strict JSON
-        top_p: 1
-    };
+    const contents = cleanedMessages.map(msg => ({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }]
+    }));
 
     try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                "api-subscription-key": SARVAM_API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
+        const response = await ai.models.generateContent({
+            model: GEMINI_MODEL_ID,
+            contents: contents,
+            config: {
+                systemInstruction: {
+                    parts: [{ text: baseSystemPrompt }]
+                },
+                temperature: GEMINI_TEMPERATURE,
+                topP: GEMINI_TOP_P,
+                topK: GEMINI_TOP_K,
+                responseMimeType: "application/json",
+                tools: [{ googleSearch: {} }],
+            }
         });
 
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error("Sarvam API HTTP Error:", errText);
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errText}`);
-        }
-
-        const data = await response.json();
-        let content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : null;
+        let content = response.text;
 
         console.log("----------------------");
-        console.log("raw content from sarvam:", content);
+        console.log("raw content from gemini:", content);
         console.log("----------------------");
 
         if (!content || content.trim() === "") {
-            console.log("Sarvam API returned empty content.");
+            console.log("Gemini API returned empty content.");
             return { action: "ANSWER", text: "I'm having trouble understanding right now. Please try again or provide more details." };
         }
 
-        // Clean up JSON markup if present
-        content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+        content = content.trim();
 
-        // One last check before parsing
-        if (!content.startsWith('{')) {
-            const match = content.match(/\{[\s\S]*\}/);
-            if (match) {
-                content = match[0];
-            }
+        // Check if the response is JSON markup
+        if (content.startsWith('\`\`\`json')) {
+            content = content.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim();
         }
 
         return JSON.parse(content);
 
     } catch (error) {
-        console.error("Sarvam API Error:", error);
+        console.error("Gemini API Error:", error);
         return { action: "ANSWER", text: "1e may be incorrect. Please verify important information." };
     }
 }
 
-module.exports = { chatWithSarvam };
+module.exports = { chatWithGemini };

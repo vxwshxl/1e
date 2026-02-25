@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { chatWithSarvam } = require('./sarvam');
+const { chatWithGemini } = require('./gemini');
 const { translateTexts } = require('./bhashini');
 
 const app = express();
@@ -29,13 +30,19 @@ app.post('/chat', async (req, res) => {
     console.log("Payload messages length:", req.body.messages ? req.body.messages.length : 0);
     try {
         // We now expect an array of messages representing conversation history
-        const { messages, page_content, elements, url, title } = req.body;
+        const { messages, page_content, elements, url, title, model } = req.body;
+        console.log("Requested Model:", model);
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: "messages array is required" });
         }
 
-        const result = await chatWithSarvam(messages, page_content, elements, url, title);
+        let result;
+        if (model === 'gemini') {
+            result = await chatWithGemini(messages, page_content, elements, url, title);
+        } else {
+            result = await chatWithSarvam(messages, page_content, elements, url, title);
+        }
 
         res.json({
             action: result.action || "ANSWER",
