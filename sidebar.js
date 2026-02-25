@@ -43,16 +43,20 @@ clearBtn.addEventListener('click', async () => {
     // Reset translation back to default
     if (translateLang.value !== "") {
         translateLang.value = "";
+        await chrome.storage.local.remove(['targetLang', 'langName']);
         await revertPageText();
     }
 });
 
 async function performTranslation(targetLang, langName) {
     if (!targetLang) {
+        await chrome.storage.local.remove(['targetLang', 'langName']);
         revertPageText();
         addMessage("Reverted to original page language.", "ai");
         return;
     }
+
+    await chrome.storage.local.set({ targetLang, langName });
 
     translateLang.disabled = true;
     translateLang.value = targetLang;
@@ -436,3 +440,33 @@ async function revertPageText() {
         });
     });
 }
+
+// -------------------------------------------------------------
+// Auto-Restore Persistent Translation State logic
+// -------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', async () => {
+    const data = await chrome.storage.local.get(['targetLang', 'langName']);
+    if (data.targetLang && data.langName) {
+        translateLang.value = data.targetLang;
+        addMessage(`Restoring translation to ${data.langName} for this page...`, "ai");
+        performTranslation(data.targetLang, data.langName);
+    }
+});
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete') {
+        const activeTab = await getActiveTab();
+        // Only trigger translation if the updated tab is the current active tab
+        if (activeTab && activeTab.id === tabId) {
+            const data = await chrome.storage.local.get(['targetLang', 'langName']);
+            if (data.targetLang && data.langName) {
+                console.log("Auto-translating new page load to", data.langName);
+
+                // Add minor delay to let complex SPAs attach initial DOM
+                setTimeout(() => {
+                    performTranslation(data.targetLang, data.langName);
+                }, 500);
+            }
+        }
+    }
+});
