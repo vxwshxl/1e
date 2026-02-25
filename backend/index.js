@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { chatWithSarvam } = require('./sarvam');
-const { translateToAssamese } = require('./bhashini');
+const { translateTexts } = require('./bhashini');
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -57,24 +57,24 @@ app.post('/chat', async (req, res) => {
 
 app.post('/translate', async (req, res) => {
     try {
-        const { text } = req.body;
+        const { texts, targetLanguage } = req.body;
 
-        if (!text) {
-            return res.status(400).json({ error: "text is required" });
+        if (!texts || !Array.isArray(texts)) {
+            return res.status(400).json({ error: "texts array is required" });
         }
 
-        let translatedText = await translateToAssamese(text);
+        let translatedTexts = await translateTexts(texts, targetLanguage || 'as');
 
-        if (!translatedText) {
-            translatedText = "Translation failed. Galixent may be incorrect. Please verify important information.";
+        if (!translatedTexts || translatedTexts.length === 0) {
+            throw new Error("Translation failed");
         }
 
-        res.json({ translated_text: translatedText });
+        res.json({ translated_texts: translatedTexts });
 
     } catch (error) {
         console.error("Translate endpoint error:", error);
         res.status(500).json({
-            translated_text: "Translation failed. Galixent may be incorrect. Please verify important information."
+            error: "Translation failed. Galixent may be incorrect. Please verify important information."
         });
     }
 });

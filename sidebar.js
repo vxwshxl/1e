@@ -2,7 +2,7 @@ const chatContainer = document.getElementById('chat-container');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const clearBtn = document.getElementById('clear-btn');
-const translateBtn = document.getElementById('translate-btn');
+const translateLang = document.getElementById('translate-lang');
 
 // Replace this with your actual local backend URL during testing
 const BACKEND_URL = 'http://127.0.0.1:8000';
@@ -34,30 +34,49 @@ clearBtn.addEventListener('click', () => {
     isAgentRunning = false;
 });
 
-translateBtn.addEventListener('click', async () => {
-    translateBtn.style.opacity = '0.5';
+translateLang.addEventListener('change', async (e) => {
+    const targetLang = e.target.value;
+
+    if (!targetLang) {
+        revertPageText();
+        addMessage("Reverted to original page language.", "ai");
+        return;
+    }
+
+    const langName = e.target.options[e.target.selectedIndex].text;
+    translateLang.disabled = true;
+
     try {
-        const text = await getPageText();
-        addMessage("Translating page to Assamese using Bhashini...", "ai");
+        addMessage(`Scanning and translating page to ${langName}...`, "ai");
+
+        // Tell content script to gather text nodes
+        const texts = await getPageTextNodes();
+
+        if (!texts || texts.length === 0) {
+            addMessage("No translatable text found on this page.", "ai", true);
+            translateLang.value = "";
+            return;
+        }
 
         const response = await fetch(`${BACKEND_URL}/translate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text })
+            body: JSON.stringify({ texts: texts, targetLanguage: targetLang })
         });
 
         const data = await response.json();
-        if (data.translated_text) {
-            addMessage("Translation complete. Updating the page...", "ai");
-            replacePageText(data.translated_text);
+        if (data.translated_texts) {
+            addMessage("Translation complete. Updating the page in-place...", "ai");
+            replacePageTextNodes(data.translated_texts);
         } else {
-            throw new Error("Missing translated text");
+            throw new Error("Missing translated texts from backend");
         }
     } catch (error) {
-        addMessage("Translation failed. Galixent may be incorrect. Please verify important information.", "ai", true);
+        addMessage("Translation failed. Galixent may be incorrect. Please verify connection.", "ai", true);
         console.error(error);
+        translateLang.value = "";
     } finally {
-        translateBtn.style.opacity = '1';
+        translateLang.disabled = false;
     }
 });
 
@@ -250,16 +269,16 @@ async function getPageContext() {
     });
 }
 
-async function getPageText() {
+async function getPageTextNodes() {
     const tab = await getActiveTab();
-    if (!tab) return "";
+    if (!tab) return null;
 
     return new Promise((resolve) => {
-        chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_TEXT" }, (response) => {
+        chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_TEXT_NODES" }, (response) => {
             if (chrome.runtime.lastError) {
-                resolve("");
+                resolve(null);
             } else {
-                resolve(response.text || "");
+                resolve(response.texts || null);
             }
         });
     });
@@ -284,12 +303,19 @@ async function executeCommandInPage(command) {
     });
 }
 
-async function replacePageText(translatedText) {
+async function replacePageTextNodes(translatedTexts) {
     const tab = await getActiveTab();
     if (!tab) return;
 
     chrome.tabs.sendMessage(tab.id, {
-        type: "TRANSLATE_PAGE",
-        translatedText: translatedText
+        type: "INJECT_TRANSLATION",
+        translatedTexts: translatedTexts
     });
+}
+
+async function revertPageText() {
+    const tab = await getActiveTab();
+    if (!tab) return;
+
+    chrome.tabs.sendMessage(tab.id, { type: "REVERT_TRANSLATION" });
 }

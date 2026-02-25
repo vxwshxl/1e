@@ -5,8 +5,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.type === "EXECUTE_COMMAND") {
         executeCommand(request.command);
         sendResponse({ status: "success" });
-    } else if (request.type === "TRANSLATE_PAGE") {
-        translatePage(request.translatedText);
+    } else if (request.type === "EXTRACT_TEXT_NODES") {
+        const texts = extractTextNodes();
+        sendResponse({ texts: texts });
+    } else if (request.type === "INJECT_TRANSLATION") {
+        injectTranslation(request.translatedTexts);
+        sendResponse({ status: "success" });
+    } else if (request.type === "REVERT_TRANSLATION") {
+        revertTranslation();
         sendResponse({ status: "success" });
     } else if (request.type === "GET_PAGE_TEXT") {
         sendResponse({ text: document.body.innerText });
@@ -130,63 +136,57 @@ function executeCommand(command) {
     });
 }
 
-function translatePage(translatedText) {
-    // A simple replacement. A robust solution would walk the DOM and replace text nodes
-    // Here we just replace the body content with the translation or overlay it.
+let originalTextNodes = [];
 
-    // Since we might break the page structure, let's create a non-intrusive readable overlay or replace text nodes
-    const textNodes = [];
-    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+function extractTextNodes() {
+    originalTextNodes = [];
+    const texts = [];
+
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (node) {
+            const tag = node.parentElement ? node.parentElement.tagName.toLowerCase() : '';
+            if (tag === 'script' || tag === 'style' || tag === 'noscript') return NodeFilter.FILTER_REJECT;
+            if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    }, false);
+
     let node;
     while (node = walk.nextNode()) {
-        if (node.nodeValue.trim().length > 0) {
-            textNodes.push(node);
+        const text = node.nodeValue.trim();
+        if (text.length > 1) {
+            originalTextNodes.push({ node: node, originalText: node.nodeValue });
+            texts.push(text);
         }
     }
 
-    // For safety and avoiding destroying the page layout/functionality just completely Replacing the page content with a simple view
-    // since the translate endpoint returns one big block of text.
+    // Limit to avoid payload crashes
+    const MAX_NODES = 500;
+    if (texts.length > MAX_NODES) {
+        originalTextNodes = originalTextNodes.slice(0, MAX_NODES);
+        return texts.slice(0, MAX_NODES);
+    }
+    return texts;
+}
 
-    if (translatedText) {
-        // Create a nice reading view overlay
-        const overlay = document.createElement('div');
-        overlay.id = 'galixent-translation-overlay';
-        overlay.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: #0f172a;
-        color: #f8fafc;
-        z-index: 9999999;
-        overflow-y: auto;
-        padding: 40px;
-        font-family: system-ui, -apple-system, sans-serif;
-        font-size: 18px;
-        line-height: 1.6;
-      `;
+function injectTranslation(translatedTexts) {
+    if (!translatedTexts || !Array.isArray(translatedTexts)) return;
 
-        const closeBtn = document.createElement('button');
-        closeBtn.innerText = 'Close Translation';
-        closeBtn.style.cssText = `
-        position: sticky;
-        top: 0;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-bottom: 20px;
-        font-weight: 600;
-      `;
-        closeBtn.onclick = () => overlay.remove();
+    for (let i = 0; i < Math.min(originalTextNodes.length, translatedTexts.length); i++) {
+        const { node, originalText } = originalTextNodes[i];
+        const translation = translatedTexts[i];
 
-        const content = document.createElement('div');
-        content.style.maxWidth = '800px';
-        content.style.margin = '0 auto';
-        content.innerText = translatedText; // preserve formatting
+        const leadingSpace = originalText.match(/^\s*/)[0];
+        const trailingSpace = originalText.match(/\s*$/)[0];
 
-        overlay.appendChild(closeBtn);
-        overlay.appendChild(content);
-        document.body.appendChild(overlay);
+        node.nodeValue = leadingSpace + translation + trailingSpace;
+    }
+}
+
+function revertTranslation() {
+    for (const item of originalTextNodes) {
+        if (item.node && item.originalText !== undefined) {
+            item.node.nodeValue = item.originalText;
+        }
     }
 }

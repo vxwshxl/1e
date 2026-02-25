@@ -19,9 +19,10 @@ ANSWER    - To talk to the user ONLY if you successfully completed the task, enc
 
 CRITICAL RULES:
 1. When you need to interact with the DOM (CLICK or TYPE), you MUST USE the 'elementId' provided in the CURRENT BROWSER CONTEXT! Do not use fuzzy text targeting.
-2. If you need user input (like an OTP), return '{"action":"ANSWER", "text":"Please provide your OTP."}'.
-3. Do NOT make up OTPs or user details if you don't know them. Ask via ANSWER.
-4. Execute only one action per turn.
+2. If you need to click a link, play a video, or select an item, you MUST issue a CLICK action. DO NOT just say you did it using ANSWER.
+3. If you need user input (like an OTP) or confirmation, return '{"action":"ANSWER", "text":"..."}'.
+4. Do NOT make up OTPs or user details if you don't know them. Ask via ANSWER.
+5. Execute only one action per turn.
 
 EXAMPLES:
 {"action":"CLICK","elementId":15}
