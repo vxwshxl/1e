@@ -3,12 +3,113 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const clearBtn = document.getElementById('clear-btn');
 const translateLang = document.getElementById('translate-lang');
+const micBtn = document.getElementById('mic-btn');
+const speechLang = document.getElementById('speech-lang');
 
 // Replace this with your actual local backend URL during testing
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
+// Speech Recognition setup
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isRecording = false;
+let silenceTimer = null;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = function () {
+        isRecording = true;
+        micBtn.classList.add('recording');
+        resetSilenceTimer();
+    };
+
+    recognition.onresult = function (event) {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+
+        let base = chatInput.dataset.baseValue || '';
+        if (base && !base.endsWith(' ')) {
+            base += ' ';
+        }
+
+        if (finalTranscript) {
+            chatInput.value = base + finalTranscript;
+            chatInput.dataset.baseValue = chatInput.value;
+        } else if (interimTranscript) {
+            chatInput.value = base + interimTranscript;
+        }
+
+        // Trigger resize
+        chatInput.style.height = 'auto';
+        chatInput.style.height = (chatInput.scrollHeight) + 'px';
+
+        resetSilenceTimer();
+    };
+
+    recognition.onerror = function (event) {
+        console.error('Speech recognition error', event.error);
+        if (event.error === 'not-allowed') {
+            addMessage('Microphone permission is required. Opening a new tab to grant permission...', 'ai', 'error');
+            chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') });
+        } else {
+            addMessage('Speech recognition error: ' + event.error, 'ai', 'error');
+        }
+        stopRecording();
+    };
+
+    recognition.onend = function () {
+        stopRecording();
+    };
+}
+
+// Add a specific reset for silence timeout
+function resetSilenceTimer() {
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+        if (isRecording) {
+            console.log('Sending message due to 3s of silence');
+            stopRecording();
+            sendMessage();
+        }
+    }, 3000);
+}
+
+function stopRecording() {
+    isRecording = false;
+    micBtn.classList.remove('recording');
+    clearTimeout(silenceTimer);
+}
+
+micBtn.addEventListener('click', () => {
+    if (!recognition) {
+        addMessage('Speech recognition is not supported in this browser.', 'ai', 'error');
+        return;
+    }
+
+    if (isRecording) {
+        recognition.stop();
+    } else {
+        chatInput.dataset.baseValue = chatInput.value;
+        recognition.lang = speechLang.value;
+        recognition.start();
+        chatInput.focus();
+    }
+});
+
 // Resize textarea dynamically
 chatInput.addEventListener('input', function () {
+    this.dataset.baseValue = this.value;
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
 });
@@ -111,7 +212,12 @@ async function sendMessage() {
     if (!text) return;
 
     chatInput.value = '';
+    chatInput.dataset.baseValue = '';
     chatInput.style.height = 'auto';
+
+    if (isRecording && recognition) {
+        recognition.stop();
+    }
 
     // Remove welcome screen on first message
     const welcomeScreen = document.querySelector('.welcome-screen');

@@ -334,6 +334,56 @@ textarea::placeholder {
     margin-left: 2px;
 }
 
+.mic-btn {
+    margin-left: 4px;
+}
+
+.mic-btn svg {
+    margin-left: 0;
+}
+
+.speech-lang-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    padding: 2px;
+    margin-left: 4px;
+}
+
+.speech-lang-select option {
+    background-color: var(--panel-bg);
+    color: var(--text-main);
+}
+
+.mic-btn.recording {
+    color: #ef4444;
+    border-color: #ef4444;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
 .footer-meta {
     display: flex;
     justify-content: center;

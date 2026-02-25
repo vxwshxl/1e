@@ -54,6 +54,20 @@
         <div class="input-area">
             <div class="input-wrapper">
                 <textarea id="chat-input" placeholder="Ask anything..." rows="1" autofocus></textarea>
+                <select id="speech-lang" class="speech-lang-select" title="Speech Language">
+                    <option value="en-US">EN</option>
+                    <option value="as-IN">AS</option>
+                    <option value="bn-IN">BN</option>
+                    <option value="hi-IN">HI</option>
+                </select>
+                <button id="mic-btn" class="send-btn mic-btn" title="Speech to Text">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                    </svg>
+                </button>
                 <button id="send-btn" class="send-btn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14M12 5l7 7-7 7" />

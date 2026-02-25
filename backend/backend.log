@@ -58,3 +58,135 @@ Payload messages length: 11
 ----------------------
 raw content from sarvam:  {"action":"ANSWER","text":"Page translated to Bodo. Waitlist confirmation sent to veebodosa@gmail.com. No further actions required."}
 ----------------------
+RECEIVED /chat request: 1772038868874
+Payload messages length: 1
+----------------------
+raw content from sarvam:  ```json
+{
+  "action": "ANSWER",
+  "text": "This page is about CodeWar 7.0, a competition or challenge platform with multiple problem statements and tracks for participants to solve. The focus is on developing solutions for various domains like healthcare, edtech, fintech, and regional language accessibility."
+}
+```
+----------------------
+RECEIVED /chat request: 1772038885478
+Payload messages length: 1
+----------------------
+raw content from sarvam:  ```json
+{
+  "action": "NAVIGATE",
+  "url": "https://codewar.aec.ac.in"
+}
+```
+----------------------
+RECEIVED /chat request: 1772038902393
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"CLICK","elementId":11}
+----------------------
+RECEIVED /chat request: 1772038904508
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Successfully entered Codestellation PS statements. Regional Language AI Assistant track is now active."}
+----------------------
+RECEIVED /chat request: 1772042534505
+Payload messages length: 1
+----------------------
+raw content from sarvam:  ```json
+{"action":"NAVIGATE","url":"https://google.com"}
+```
+----------------------
+RECEIVED /chat request: 1772042541260
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Successfully navigated to Google. Current page shows language options and search interface in Bengali. What would you like to search for or select a language?"}
+----------------------
+RECEIVED /chat request: 1772043272704
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://royalglobaluniversity.com"}
+----------------------
+RECEIVED /chat request: 1772043288276
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The website appears to have technical issues (script injection failed). Please refresh the page or check your internet connection. I cannot proceed with translation until the page loads properly."}
+----------------------
+RECEIVED /chat request: 1772043296825
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://rgu.ac"}
+----------------------
+RECEIVED /chat request: 1772043506657
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"TRANSLATE","language":"brx"}
+----------------------
+RECEIVED /chat request: 1772043529023
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Page translated successfully to Bodo (brx). The content appears to be in Bodo script now. Would you like me to continue interacting with the page or perform any specific action?"}
+----------------------
+RECEIVED /chat request: 1772043880924
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"I'm currently navigating rgu.ac as per your initial request. To search for bicycles on amazon.com, I would need to first navigate to that website. Should I abandon the current task and proceed to amazon.com instead?"}
+----------------------
+RECEIVED /chat request: 1772043929156
+Payload messages length: 1
+----------------------
+raw content from sarvam:  ```json
+{
+  "action": "NAVIGATE",
+  "url": "https://www.amazon.in"
+}
+```
+----------------------
+RECEIVED /chat request: 1772043936848
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"Successfully navigated to Amazon.in. Current page shows product listings, deals, and account details. How would you like to proceed? (e.g., search for a product, view deals, or access account features)"}
+----------------------
+RECEIVED /chat request: 1772043965817
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"ANSWER","text":"The translation service shows the Assamese translation as: 'amazon.in লৈ যাওক আৰু চাইকেল বিচাৰক'. However, this appears to be a translation of your original goal rather than an executable action. To proceed, I need you to confirm if you want me to:\n1) Continue with the translation service\n2) Navigate directly to Amazon.in (as previously attempted)\n3) Execute the translated Assamese command if it represents a valid action"}
+----------------------
+RECEIVED /chat request: 1772043971769
+Payload messages length: 1
+----------------------
+raw content from sarvam:  {"action":"NAVIGATE","url":"https://www.amazon.in/s?k=bicycle"}
+----------------------
+RECEIVED /chat request: 1772043978208
+Payload messages length: 3
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772043980796
+Payload messages length: 5
+----------------------
+raw content from sarvam:  {"action":"CLICK","elementId":15}
+----------------------
+RECEIVED /chat request: 1772043982775
+Payload messages length: 7
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772043984746
+Payload messages length: 9
+----------------------
+raw content from sarvam:  {"action":"CLICK","elementId":146}
+----------------------
+RECEIVED /chat request: 1772043986771
+Payload messages length: 11
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
+RECEIVED /chat request: 1772043988776
+Payload messages length: 13
+----------------------
+raw content from sarvam:  {"action":"CLICK","elementId":146}
+----------------------
+RECEIVED /chat request: 1772043990783
+Payload messages length: 15
+----------------------
+raw content from sarvam:  {"action":"SCROLL","direction":"DOWN"}
+----------------------
