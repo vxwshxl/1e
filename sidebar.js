@@ -23,6 +23,20 @@ let analyser = null;
 let microphoneStream = null;
 let eqAnimationId = null;
 
+// Configure Marked.js for Markdown parsing
+if (typeof marked !== 'undefined') {
+    marked.setOptions({
+        breaks: true, // Convert \n to <br>
+        gfm: true,    // GitHub Flavored Markdown
+        highlight: function (code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                return hljs.highlight(code, { language: lang }).value;
+            }
+            return hljs.highlightAuto(code).value;
+        }
+    });
+}
+
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -219,7 +233,7 @@ clearBtn.addEventListener('click', async () => {
 async function performTranslation(targetLang, langName) {
     if (!targetLang) {
         await chrome.storage.local.remove(['targetLang', 'langName']);
-        revertPageText();
+        await revertPageText();
         addMessage("Reverted to original page language.", "ai");
         return;
     }
@@ -230,6 +244,11 @@ async function performTranslation(targetLang, langName) {
     translateLang.value = targetLang;
 
     try {
+        // REVERT ANY EXISTING TRANSLATION FIRST!
+        // This ensures that we always translate from the original English DOM
+        // instead of translating from already translated text, which would overwrite the original nodes array
+        await revertPageText();
+
         addMessage(`Scanning and translating page to ${langName}...`, "ai");
 
         const texts = await getPageTextNodes();
@@ -434,7 +453,16 @@ function addMessage(text, sender, type = 'normal') {
     } else {
         const contentDiv = document.createElement('div');
         contentDiv.className = 'msg-content';
-        contentDiv.innerText = text; // simple text formatting
+
+        if (sender === 'ai' && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+            // Render Markdown for AI messages
+            const rawHtml = marked.parse(text);
+            contentDiv.innerHTML = DOMPurify.sanitize(rawHtml);
+        } else {
+            // Simple text formatting for user or if marked is missing
+            contentDiv.innerText = text;
+        }
+
         msgDiv.appendChild(contentDiv);
     }
 

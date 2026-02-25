@@ -220,7 +220,7 @@ select.action-btn option {
     background: var(--panel-bg);
     padding: 12px;
     border-radius: 8px;
-    margin: 8px 0;
+    margin: 12px 0;
     overflow-x: auto;
     border: 1px solid var(--border);
 }
@@ -228,6 +228,71 @@ select.action-btn option {
 .ai-message .msg-content code {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
+    background: var(--panel-bg);
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.ai-message .msg-content pre code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+.ai-message .msg-content p {
+    margin-bottom: 12px;
+}
+
+.ai-message .msg-content p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-message .msg-content h1,
+.ai-message .msg-content h2,
+.ai-message .msg-content h3,
+.ai-message .msg-content h4 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.ai-message .msg-content h1 {
+    font-size: 18px;
+}
+
+.ai-message .msg-content h2 {
+    font-size: 16px;
+}
+
+.ai-message .msg-content h3 {
+    font-size: 15px;
+}
+
+.ai-message .msg-content ul,
+.ai-message .msg-content ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+}
+
+.ai-message .msg-content li {
+    margin-bottom: 4px;
+}
+
+.ai-message .msg-content a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.ai-message .msg-content a:hover {
+    text-decoration: underline;
+}
+
+.ai-message .msg-content blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 12px 0;
+    padding-left: 12px;
+    color: var(--text-muted);
 }
 
 /* Loading Indicator */
