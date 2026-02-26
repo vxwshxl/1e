@@ -1,7 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
 const { baseSystemPrompt } = require('./prompt');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBNWsI20kwS64RoJ1FMkNRR9AF7sDbOm9Q";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL_ID = process.env.GEMINI_MODEL_ID || "gemini-flash-latest";
 const GEMINI_TEMPERATURE = parseFloat(process.env.GEMINI_TEMPERATURE || "1");
 const GEMINI_TOP_P = parseFloat(process.env.GEMINI_TOP_P || "0.95");
