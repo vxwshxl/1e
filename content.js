@@ -110,7 +110,7 @@ function executeCommand(command) {
                 const el = document.querySelector(`[data-1e-id="${command.elementId}"]`);
 
                 if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     setTimeout(() => {
                         el.click();
                         resolve();
@@ -131,7 +131,7 @@ function executeCommand(command) {
                 const el = document.querySelector(`[data-1e-id="${command.elementId}"]`);
 
                 if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     setTimeout(() => {
                         el.focus();
 
@@ -175,7 +175,7 @@ function executeCommand(command) {
 
                 if (el && el.tagName.toLowerCase() === 'img') {
                     // Scroll to ensure it's fully visible and not blocked by sticky headers if possible
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
                     // Give it a moment to land and render
                     setTimeout(() => {
