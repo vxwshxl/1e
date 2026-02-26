@@ -107,7 +107,7 @@ if (SpeechRecognition) {
         if (event.error === 'not-allowed') {
             addMessage('Microphone permission is required. Opening a new tab to grant permission...', 'ai', 'error');
             chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') });
-        } else {
+        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
             addMessage('Speech recognition error: ' + event.error, 'ai', 'error');
         }
         stopRecording();
@@ -124,9 +124,18 @@ function resetSilenceTimer() {
     silenceTimer = setTimeout(() => {
         if (isRecording) {
             console.log('Sending message due to 2s of silence');
-            if (recognition) recognition.stop();
+            const hasText = chatInput.value.trim().length > 0;
+            if (recognition) {
+                if (hasText) {
+                    recognition.stop();
+                } else {
+                    recognition.abort();
+                }
+            }
             stopRecording();
-            sendMessage();
+            if (hasText) {
+                sendMessage();
+            }
         }
     }, 2000);
 }
@@ -151,6 +160,7 @@ function stopRecording() {
 }
 
 function startEqualizer() {
+    if (microphoneStream) return;
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
             microphoneStream = stream;
@@ -205,9 +215,25 @@ micBtn.addEventListener('click', () => {
     } else {
         chatInput.dataset.baseValue = chatInput.value;
         recognition.lang = speechLang.value;
-        recognition.start();
-        startEqualizer();
-        chatInput.focus();
+
+        try {
+            recognition.start();
+            startEqualizer();
+            chatInput.focus();
+        } catch (e) {
+            console.warn("Could not start recognition directly:", e);
+            // Engine might still be stopping. Abort it completely and retry.
+            recognition.abort();
+            setTimeout(() => {
+                try {
+                    recognition.start();
+                    startEqualizer();
+                    chatInput.focus();
+                } catch (err) {
+                    console.error("Failed to restart recognition:", err);
+                }
+            }, 300);
+        }
     }
 });
 
