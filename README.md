@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="1e.png" width="200"/>
+</p>
+
+<h1 align="center">1e Agentic Engine</h1>
+
 # 1e — Regional Language AI Browser Assistant
 
 1e is a production-ready, AI-powered browser sidebar assistant built using Chrome Extension MV3, FastAPI, Sarvam AI, and Bhashini AI.
