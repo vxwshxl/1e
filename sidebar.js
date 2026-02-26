@@ -11,6 +11,29 @@ const eqBars = equalizer ? equalizer.querySelectorAll('.bar') : [];
 // Replace this with your actual local backend URL during testing
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === "TRANSLATE_NEW_NODES") {
+        fetch(`${BACKEND_URL}/translate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texts: request.texts, targetLanguage: request.targetLang })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.translated_texts) {
+                    chrome.tabs.sendMessage(sender.tab.id, {
+                        type: "INJECT_NEW_TRANSLATIONS",
+                        translatedTexts: data.translated_texts,
+                        nodeIds: request.nodeIds
+                    });
+                }
+            })
+            .catch(err => console.error("Dynamic translation failed:", err));
+        sendResponse({ status: "processing" });
+        return true;
+    }
+});
+
 // Speech Recognition setup
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
@@ -235,6 +258,8 @@ clearBtn.addEventListener('click', async () => {
         translateLang.value = "";
         await chrome.storage.local.remove(['targetLang', 'langName']);
         await revertPageText();
+        const tab = await getActiveTab();
+        if (tab) chrome.tabs.sendMessage(tab.id, { type: "SET_TRANSLATION_STATE", lang: null });
     }
 });
 
@@ -242,6 +267,8 @@ async function performTranslation(targetLang, langName) {
     if (!targetLang) {
         await chrome.storage.local.remove(['targetLang', 'langName']);
         await revertPageText();
+        const tab = await getActiveTab();
+        if (tab) chrome.tabs.sendMessage(tab.id, { type: "SET_TRANSLATION_STATE", lang: null });
         addMessage("Reverted to original page language.", "ai");
         return;
     }
@@ -276,7 +303,14 @@ async function performTranslation(targetLang, langName) {
         const data = await response.json();
         if (data.translated_texts) {
             addMessage("Translation complete. Updating the page in-place...", "ai", "success");
-            replacePageTextNodes(data.translated_texts);
+            await replacePageTextNodes(data.translated_texts);
+
+            setTimeout(async () => {
+                const tab = await getActiveTab();
+                if (tab) {
+                    chrome.tabs.sendMessage(tab.id, { type: "SET_TRANSLATION_STATE", lang: targetLang });
+                }
+            }, 1000);
         } else {
             throw new Error("Missing translated texts from backend");
         }
