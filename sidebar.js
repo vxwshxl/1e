@@ -11,6 +11,29 @@ const eqBars = equalizer ? equalizer.querySelectorAll('.bar') : [];
 // Replace this with your actual local backend URL during testing
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === "TRANSLATE_NEW_NODES") {
+        fetch(`${BACKEND_URL}/translate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texts: request.texts, targetLanguage: request.targetLang })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.translated_texts) {
+                    chrome.tabs.sendMessage(sender.tab.id, {
+                        type: "INJECT_NEW_TRANSLATIONS",
+                        translatedTexts: data.translated_texts,
+                        nodeIds: request.nodeIds
+                    });
+                }
+            })
+            .catch(err => console.error("Dynamic translation failed:", err));
+        sendResponse({ status: "processing" });
+        return true;
+    }
+});
+
 // Speech Recognition setup
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
@@ -86,7 +109,7 @@ if (SpeechRecognition) {
         if (event.error === 'not-allowed') {
             addMessage('Microphone permission is required. Opening a new tab to grant permission...', 'ai', 'error');
             chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') });
-        } else {
+        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
             addMessage('Speech recognition error: ' + event.error, 'ai', 'error');
         }
         stopRecording();
@@ -103,9 +126,18 @@ function resetSilenceTimer() {
     silenceTimer = setTimeout(() => {
         if (isRecording) {
             console.log('Sending message due to 2s of silence');
-            if (recognition) recognition.stop();
+            const hasText = chatInput.value.trim().length > 0;
+            if (recognition) {
+                if (hasText) {
+                    recognition.stop();
+                } else {
+                    recognition.abort();
+                }
+            }
             stopRecording();
-            sendMessage();
+            if (hasText) {
+                sendMessage();
+            }
         }
     }, 2000);
 }
@@ -130,6 +162,7 @@ function stopRecording() {
 }
 
 function startEqualizer() {
+    if (microphoneStream) return;
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
             microphoneStream = stream;
@@ -184,9 +217,25 @@ micBtn.addEventListener('click', () => {
     } else {
         chatInput.dataset.baseValue = chatInput.value;
         recognition.lang = speechLang.value;
-        recognition.start();
-        startEqualizer();
-        chatInput.focus();
+
+        try {
+            recognition.start();
+            startEqualizer();
+            chatInput.focus();
+        } catch (e) {
+            console.warn("Could not start recognition directly:", e);
+            // Engine might still be stopping. Abort it completely and retry.
+            recognition.abort();
+            setTimeout(() => {
+                try {
+                    recognition.start();
+                    startEqualizer();
+                    chatInput.focus();
+                } catch (err) {
+                    console.error("Failed to restart recognition:", err);
+                }
+            }, 300);
+        }
     }
 });
 
@@ -241,6 +290,8 @@ clearBtn.addEventListener('click', async () => {
         translateLang.value = "";
         await chrome.storage.local.remove(['targetLang', 'langName']);
         await revertPageText();
+        const tab = await getActiveTab();
+        if (tab) chrome.tabs.sendMessage(tab.id, { type: "SET_TRANSLATION_STATE", lang: null });
     }
 });
 
@@ -248,6 +299,8 @@ async function performTranslation(targetLang, langName) {
     if (!targetLang) {
         await chrome.storage.local.remove(['targetLang', 'langName']);
         await revertPageText();
+        const tab = await getActiveTab();
+        if (tab) chrome.tabs.sendMessage(tab.id, { type: "SET_TRANSLATION_STATE", lang: null });
         addMessage("Reverted to original page language.", "ai");
         return;
     }
@@ -288,6 +341,9 @@ async function performTranslation(targetLang, langName) {
             await replacePageTextNodes(data.translated_texts);
 
             // Notify content script about updated translation state
+            addMessage("Translation complete. Updating the page in-place...", "ai", "success");
+            await replacePageTextNodes(data.translated_texts);
+
             setTimeout(async () => {
                 const tab = await getActiveTab();
                 if (tab) {

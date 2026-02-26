@@ -19,6 +19,17 @@ if (!window.__1e_content_script_injected) {
             sendResponse({ status: "success" });
         } else if (request.type === "GET_PAGE_TEXT") {
             sendResponse({ text: document.body.innerText });
+        } else if (request.type === "SET_TRANSLATION_STATE") {
+            currentTargetLang = request.lang;
+            if (currentTargetLang) {
+                startTranslationObserver();
+            } else {
+                stopTranslationObserver();
+            }
+            sendResponse({ status: "success" });
+        } else if (request.type === "INJECT_NEW_TRANSLATIONS") {
+            injectNewTranslations(request.translatedTexts, request.nodeIds);
+            sendResponse({ status: "success" });
         }
         return true;
     });
@@ -256,6 +267,9 @@ function injectTranslation(translatedTexts) {
         const trailingSpace = originalText.match(/\s*$/)[0];
 
         node.nodeValue = leadingSpace + translation + trailingSpace;
+        if (node.parentElement) {
+            node.parentElement.setAttribute('data-1e-translated', 'true');
+        }
     }
 }
 
@@ -263,6 +277,92 @@ function revertTranslation() {
     for (const item of originalTextNodes) {
         if (item.node && item.originalText !== undefined) {
             item.node.nodeValue = item.originalText;
+            if (item.node.parentElement) {
+                item.node.parentElement.removeAttribute('data-1e-translated');
+            }
+        }
+    }
+}
+
+let translationObserver = null;
+let currentTargetLang = null;
+let dynamicNodesMap = new Map();
+let dynamicNodeIdCounter = 1;
+
+function startTranslationObserver() {
+    if (translationObserver) return;
+    translationObserver = new MutationObserver((mutations) => {
+        let addedTexts = [];
+        let addedIds = [];
+
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const walk = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+                        acceptNode: function (n) {
+                            const tag = n.parentElement ? n.parentElement.tagName.toLowerCase() : '';
+                            if (tag === 'script' || tag === 'style' || tag === 'noscript') return NodeFilter.FILTER_REJECT;
+                            if (!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+                            if (n.parentElement && n.parentElement.hasAttribute('data-1e-translated')) return NodeFilter.FILTER_REJECT;
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                    }, false);
+                    let textNode;
+                    while (textNode = walk.nextNode()) {
+                        const text = textNode.nodeValue.trim();
+                        if (text.length > 1) {
+                            const id = dynamicNodeIdCounter++;
+                            dynamicNodesMap.set(id, { node: textNode, originalText: textNode.nodeValue });
+                            addedTexts.push(text);
+                            addedIds.push(id);
+                        }
+                    }
+                } else if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim().length > 1) {
+                    const tag = node.parentElement ? node.parentElement.tagName.toLowerCase() : '';
+                    if (tag !== 'script' && tag !== 'style' && tag !== 'noscript' && (!node.parentElement || !node.parentElement.hasAttribute('data-1e-translated'))) {
+                        const id = dynamicNodeIdCounter++;
+                        dynamicNodesMap.set(id, { node: node, originalText: node.nodeValue });
+                        addedTexts.push(node.nodeValue.trim());
+                        addedIds.push(id);
+                    }
+                }
+            });
+        });
+
+        if (addedTexts.length > 0) {
+            chrome.runtime.sendMessage({
+                type: "TRANSLATE_NEW_NODES",
+                texts: addedTexts,
+                nodeIds: addedIds,
+                targetLang: currentTargetLang
+            });
+        }
+    });
+
+    translationObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function stopTranslationObserver() {
+    if (translationObserver) {
+        translationObserver.disconnect();
+        translationObserver = null;
+    }
+}
+
+function injectNewTranslations(translatedTexts, nodeIds) {
+    if (!translatedTexts || !nodeIds) return;
+    for (let i = 0; i < nodeIds.length; i++) {
+        const id = nodeIds[i];
+        const translation = translatedTexts[i];
+        if (dynamicNodesMap.has(id)) {
+            const item = dynamicNodesMap.get(id);
+            const originalText = item.originalText;
+            const leadingSpace = originalText.match(/^\s*/)[0] || "";
+            const trailingSpace = originalText.match(/\s*$/)[0] || "";
+            item.node.nodeValue = leadingSpace + translation + trailingSpace;
+            if (item.node.parentElement) {
+                item.node.parentElement.setAttribute('data-1e-translated', 'true');
+            }
         }
     }
 }
