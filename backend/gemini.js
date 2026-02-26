@@ -68,10 +68,32 @@ CRITICAL INSTRUCTION: If the COMMAND above is a general knowledge question (e.g.
         }
     }
 
-    const contents = cleanedMessages.map(msg => ({
-        role: msg.role === "assistant" ? "model" : "user",
-        parts: [{ text: msg.content }]
-    }));
+    const contents = cleanedMessages.map(msg => {
+        const parts = [];
+        if (msg.content) parts.push({ text: msg.content });
+        if (msg.image_data) {
+            console.log("DETECTED IMAGE DATA in message length:", msg.image_data.length);
+            const match = msg.image_data.match(/^data:(image\/[^;]+);base64,(.*)$/);
+            if (match) {
+                console.log("IMAGE DATA MATCHED! Mime type:", match[1]);
+                parts.push({
+                    inlineData: {
+                        mimeType: match[1],
+                        data: match[2]
+                    }
+                });
+            } else {
+                console.log("IMAGE DATA DID NOT MATCH REGEX:", msg.image_data.substring(0, 50));
+                parts.push({ text: `[Image Data was provided but could not be parsed]` });
+            }
+        }
+        return {
+            role: msg.role === "assistant" ? "model" : "user",
+            parts: parts
+        };
+    });
+
+    console.log("FINAL CONTENTS TO GEMINI:", JSON.stringify(contents, null, 2).substring(0, 1500) + "...");
 
     try {
         const response = await ai.models.generateContent({

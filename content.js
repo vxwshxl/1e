@@ -64,6 +64,22 @@ function extractContext() {
         console.warn("Failed to extract button elements", e);
     }
 
+    const images = [];
+    try {
+        document.querySelectorAll('img').forEach(img => {
+            if (img.offsetParent !== null) { // only visible
+                const label = (img.alt || img.id || img.src || "image").substring(0, 100);
+                if (!img.hasAttribute('data-1e-id')) {
+                    img.setAttribute('data-1e-id', nextElementId);
+                    images.push({ id: nextElementId, name: label, type: 'image' });
+                    nextElementId++;
+                }
+            }
+        });
+    } catch (e) {
+        console.warn("Failed to extract image elements", e);
+    }
+
     let headings = [];
     try {
         headings = Array.from(document.querySelectorAll('h1, h2, h3'))
@@ -77,7 +93,7 @@ function extractContext() {
     return {
         page_content: text,
         elements: {
-            interactable: [...inputs, ...buttons].slice(0, 300), // Keep payload broad enough for complex pages
+            interactable: [...inputs, ...buttons, ...images].slice(0, 400), // Keep payload broad enough for complex pages
             headings: [...new Set(headings)]
         }
     };
@@ -154,12 +170,37 @@ function executeCommand(command) {
             } else if (action === "NAVIGATE" && command.url) {
                 window.location.href = command.url;
                 // Don't resolve immediately; let the page unload
+            } else if (action === "READ_IMAGE" && command.elementId) {
+                const el = document.querySelector(`[data-1e-id="${command.elementId}"]`);
+
+                if (el && el.tagName.toLowerCase() === 'img') {
+                    // Scroll to ensure it's fully visible and not blocked by sticky headers if possible
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Give it a moment to land and render
+                    setTimeout(() => {
+                        const rect = el.getBoundingClientRect();
+                        // Also need the device pixel ratio for correct cropping later
+                        resolve({
+                            rect: {
+                                x: rect.left,
+                                y: rect.top,
+                                width: rect.width,
+                                height: rect.height
+                            },
+                            devicePixelRatio: window.devicePixelRatio || 1
+                        });
+                    }, 500);
+                } else {
+                    console.warn("Element not found or not an image (ID):", command.elementId);
+                    resolve({ error: "Element not found or is not an image." });
+                }
             } else {
-                resolve();
+                resolve({});
             }
         } catch (error) {
             console.error("Error executing command:", error);
-            resolve();
+            resolve({ error: error.message });
         }
     });
 }

@@ -411,8 +411,11 @@ async function runAgentLoop() {
                 let msgText = `Executing command: ${data.action} ${data.elementId ? `on element #${data.elementId}` : ''}`;
                 if (data.action === "NAVIGATE") msgText = `Navigating to ${data.url}`;
                 if (data.action === "TYPE") msgText = `Typing "${data.text}" into element #${data.elementId}`;
+                if (data.action === "READ_IMAGE") msgText = `Reading image element #${data.elementId}`;
 
                 removeElement(typingId);
+
+                let executedResponse = null;
 
                 if (data.action === "TRANSLATE" && data.language) {
                     const selectEl = document.getElementById('translate-lang');
@@ -435,7 +438,7 @@ async function runAgentLoop() {
                     addTypingIndicator(typingId);
 
                     // Execute command
-                    await executeCommandInPage(data);
+                    executedResponse = await executeCommandInPage(data);
                 }
 
                 // We need to give the page time to react (navigate, modal open, DOM update)
@@ -448,10 +451,49 @@ async function runAgentLoop() {
 
                 if (userRequestedStop) break;
 
+                let nextGoal = `Action ${data.action} executed. Review the new WEBPAGE CONTENT and AVAILABLE ELEMENTS. What is the next logical action to achieve the USER GOAL? If you meet the goal, or need the user to input something, return {"action":"ANSWER", "text":"..."}.`;
+                let additionalData = null;
+
+                if (executedResponse && executedResponse.rect) {
+                    try {
+                        const tab = await getActiveTab();
+                        const screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+
+                        // Crop the image down in the sidebar context (bypasses page CORS)
+                        const image = new Image();
+                        image.src = screenshotDataUrl;
+                        await new Promise(r => image.onload = r);
+
+                        const rect = executedResponse.rect;
+                        const dpr = executedResponse.devicePixelRatio || 1;
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = rect.width * dpr;
+                        canvas.height = rect.height * dpr;
+                        const ctx = canvas.getContext('2d');
+
+                        // Draw cropped section
+                        ctx.drawImage(
+                            image,
+                            rect.x * dpr, rect.y * dpr, rect.width * dpr, rect.height * dpr,
+                            0, 0, canvas.width, canvas.height
+                        );
+
+                        additionalData = canvas.toDataURL('image/png');
+                        nextGoal = `Image successfully captured via secure screenshot. Please extract the EXACT literal alphanumeric text shown in this image. Pay STRICT attention to uppercase and lowercase letters. Do NOT try to interpret or guess what it means. Provide the result using {"action":"TYPE", "elementId":<id_of_input_field>, "text":"<exact_literal_text_from_image>"}. What is the next logical action?`;
+                    } catch (captureErr) {
+                        console.error("Tab capture failed:", captureErr);
+                        nextGoal = `Action failed: Could not capture secure screenshot due to cross-origin or capture API restrictions. Please try an alternative approach.`;
+                    }
+                } else if (executedResponse && executedResponse.error) {
+                    nextGoal = `Action failed: ${executedResponse.error}. Please try an alternative approach.`;
+                }
+
                 // Prompt the AI to continue based on new context
                 chatHistory.push({
                     role: "user",
-                    content: `Action ${data.action} executed. Review the new WEBPAGE CONTENT and AVAILABLE ELEMENTS. What is the next logical action to achieve the USER GOAL? If you meet the goal, or need the user to input something, return {"action":"ANSWER", "text":"..."}.`
+                    content: nextGoal,
+                    image_data: additionalData
                 });
 
             } else if (data.action === "ANSWER" || data.text) {
@@ -635,7 +677,7 @@ async function executeCommandInPage(command) {
         chrome.tabs.sendMessage(tab.id, {
             type: "EXECUTE_COMMAND",
             command: command
-        }, async () => {
+        }, async (response) => {
             if (chrome.runtime.lastError) {
                 console.warn("Initial execute command error:", chrome.runtime.lastError.message);
                 const injected = await injectContentScriptIfNeeded(tab.id);
@@ -643,12 +685,12 @@ async function executeCommandInPage(command) {
                     chrome.tabs.sendMessage(tab.id, {
                         type: "EXECUTE_COMMAND",
                         command: command
-                    }, resolve);
+                    }, (retryResponse) => resolve(retryResponse || {}));
                 } else {
-                    resolve();
+                    resolve({});
                 }
             } else {
-                resolve();
+                resolve(response || {});
             }
         });
     });
