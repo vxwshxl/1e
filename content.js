@@ -36,9 +36,9 @@ function extractContext() {
 
     const inputs = [];
     try {
-        document.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(i => {
+        document.querySelectorAll('input:not([type="hidden"]), textarea, select, [contenteditable="true"]').forEach(i => {
             if (i.offsetParent !== null) {
-                const label = (i.placeholder || i.name || i.id || i.value || i.getAttribute('aria-label') || "input").substring(0, 50);
+                const label = (i.placeholder || i.name || i.id || i.value || i.innerText || i.getAttribute('aria-label') || "input").substring(0, 50);
                 i.setAttribute('data-1e-id', nextElementId);
                 inputs.push({ id: nextElementId, name: label, type: i.type || i.tagName.toLowerCase() });
                 nextElementId++;
@@ -135,12 +135,19 @@ function executeCommand(command) {
                     setTimeout(() => {
                         el.focus();
 
-                        // Deal with React/React DOM inputs
-                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-                        if (nativeInputValueSetter) {
-                            nativeInputValueSetter.call(el, command.text);
+                        // Deal with React/React DOM inputs and contenteditables
+                        if (el.isContentEditable) {
+                            el.innerText = command.text;
                         } else {
-                            el.value = command.text;
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+                            const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+                            if (nativeInputValueSetter && el.tagName.toLowerCase() === 'input') {
+                                nativeInputValueSetter.call(el, command.text);
+                            } else if (nativeTextAreaValueSetter && el.tagName.toLowerCase() === 'textarea') {
+                                nativeTextAreaValueSetter.call(el, command.text);
+                            } else {
+                                el.value = command.text;
+                            }
                         }
 
                         el.dispatchEvent(new Event('input', { bubbles: true }));
