@@ -1,108 +1,173 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>1e Sidebar</title>
-    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="sidebar.css" />
 
     <!-- Markdown Parser & Sanitizer -->
     <script src="vendor/marked.min.js"></script>
     <script src="vendor/purify.min.js"></script>
 
     <!-- Code Highlighting -->
-    <link rel="stylesheet" href="vendor/github-dark.min.css">
+    <link rel="stylesheet" href="vendor/github-dark.min.css" />
     <script src="vendor/highlight.min.js"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <!-- 1e Logo/Icon placeholder -->
-                    <img src="1e.png" alt="1e Logo" width="24" height="24" style="border-radius: 4px;">
-                    <span>1e</span>
-                </div>
-                <div class="header-actions">
-                    <select id="model-select" class="action-btn" title="AI Model" style="margin-right: 4px;">
-                        <option value="sarvam">Sarvam</option>
-                        <option value="gemini">Gemini</option>
-                    </select>
-                    <select id="translate-lang" class="action-btn" title="Translate Page">
-                        <option value="">Default</option>
-                        <option value="as">Assamese</option>
-                        <option value="bn">Bengali</option>
-                        <option value="brx">Bodo</option>
-                        <option value="hi">Hindi</option>
-                        <option value="en">English</option>
-                    </select>
-                    <button id="clear-btn" class="action-btn" title="Clear Chat">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                        </svg>
-                    </button>
-                </div>
+      <header class="header">
+        <div class="header-content">
+          <div class="logo">
+            <!-- 1e Logo/Icon placeholder -->
+            <img
+              src="1e.png"
+              alt="1e Logo"
+              width="24"
+              height="24"
+              style="border-radius: 4px"
+            />
+            <span>1e</span>
+          </div>
+          <div class="header-actions">
+            <div class="select-wrapper">
+              <select id="model-select" class="action-btn" title="AI Model">
+                <option value="sarvam">Sarvam</option>
+                <option value="gemini">Gemini</option>
+              </select>
             </div>
-        </header>
-
-        <div class="main-content">
-            <div id="chat-container" class="chat-container">
-                <div class="welcome-screen">
-                    <div class="welcome-icon">
-                        <img src="1e.png" alt="1e Logo" width="48" height="48" style="border-radius: 8px;">
-                    </div>
-                    <h2>Welcome to<br>1e Agentic Engine</h2>
-                    <p>Designed for Pure Intelligence.</p>
-                    <p class="subtitle">I can read the page, answer questions, translate, and perform browser actions.
-                    </p>
-                </div>
-                <!-- Messages will be injected here -->
+            <div class="select-wrapper">
+              <select
+                id="translate-lang"
+                class="action-btn"
+                title="Translate Page"
+              >
+                <option value="">Default</option>
+                <option value="as">Assamese</option>
+                <option value="bn">Bengali</option>
+                <option value="brx">Bodo</option>
+                <option value="hi">Hindi</option>
+                <option value="en">English</option>
+              </select>
             </div>
+            <button id="clear-btn" class="action-btn" title="Clear Chat">
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
+      </header>
 
-        <div class="input-area">
-            <div class="input-wrapper">
-                <textarea id="chat-input" placeholder="Ask anything..." rows="1" autofocus></textarea>
-                <select id="speech-lang" class="speech-lang-select" title="Speech Language">
-                    <option value="en-US">EN</option>
-                    <option value="as-IN">AS</option>
-                    <option value="bn-IN">BN</option>
-                    <option value="hi-IN">HI</option>
-                </select>
-                <button id="mic-btn" class="send-btn mic-btn" title="Speech to Text">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <line x1="12" y1="19" x2="12" y2="22"></line>
-                    </svg>
-                </button>
-                <div id="mic-equalizer" class="equalizer hidden">
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                </div>
-                <button id="send-btn" class="send-btn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                </button>
+      <div class="main-content">
+        <div id="chat-container" class="chat-container">
+          <div class="welcome-screen">
+            <div class="welcome-icon">
+              <img
+                src="1e.png"
+                alt="1e Logo"
+                width="48"
+                height="48"
+                style="border-radius: 8px"
+              />
             </div>
-            <div class="footer-meta">
-                <span class="badge">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    1e Agentic Engine
-                </span>
-            </div>
+            <h2>Welcome to<br />1e Agentic Engine</h2>
+            <p>Designed for Pure Intelligence.</p>
+            <p class="subtitle">
+              I can read the page, answer questions, translate, and perform
+              browser actions.
+            </p>
+          </div>
+          <!-- Messages will be injected here -->
         </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea
+            id="chat-input"
+            placeholder="Ask anything..."
+            rows="1"
+            autofocus
+          ></textarea>
+          <select
+            id="speech-lang"
+            class="speech-lang-select"
+            title="Speech Language"
+          >
+            <option value="en-US">EN</option>
+            <option value="as-IN">AS</option>
+            <option value="bn-IN">BN</option>
+            <option value="hi-IN">HI</option>
+          </select>
+          <button id="mic-btn" class="send-btn mic-btn" title="Speech to Text">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"
+              ></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="22"></line>
+            </svg>
+          </button>
+          <div id="mic-equalizer" class="equalizer hidden">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+          </div>
+          <button id="send-btn" class="send-btn">
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        <div class="footer-meta">
+          <span class="badge">
+            <svg
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            1e Agentic Engine
+          </span>
+        </div>
+      </div>
     </div>
     <script src="sidebar.js"></script>
-</body>
-
+  </body>
 </html>

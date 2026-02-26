@@ -47,6 +47,8 @@ let microphoneStream = null;
 let eqAnimationId = null;
 
 // Configure Marked.js for Markdown parsing
+let translationAbortController = null;
+
 if (typeof marked !== 'undefined') {
     marked.setOptions({
         breaks: true, // Convert \n to <br>
@@ -277,6 +279,10 @@ clearBtn.addEventListener('click', async () => {
     chatContainer.innerHTML = welcomeScreenHTML;
     // RESET AGENT STATE
     chatHistory = [];
+    if (translationAbortController) {
+        translationAbortController.abort();
+        translationAbortController = null;
+    }
     stopAgentLoop();
 
     // Reset translation back to default
@@ -304,10 +310,12 @@ async function performTranslation(targetLang, langName) {
     translateLang.disabled = true;
     translateLang.value = targetLang;
 
+    if (translationAbortController) translationAbortController.abort();
+    translationAbortController = new AbortController();
+    const signal = translationAbortController.signal;
+
     try {
         // REVERT ANY EXISTING TRANSLATION FIRST!
-        // This ensures that we always translate from the original English DOM
-        // instead of translating from already translated text, which would overwrite the original nodes array
         await revertPageText();
 
         addMessage(`Scanning and translating page to ${langName}...`, "ai");
@@ -323,11 +331,16 @@ async function performTranslation(targetLang, langName) {
         const response = await fetch(`${BACKEND_URL}/translate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: signal,
             body: JSON.stringify({ texts: texts, targetLanguage: targetLang })
         });
 
         const data = await response.json();
         if (data.translated_texts) {
+            addMessage("Translation complete. Updating the page in-place...", "ai", "translation-success");
+            await replacePageTextNodes(data.translated_texts);
+
+            // Notify content script about updated translation state
             addMessage("Translation complete. Updating the page in-place...", "ai", "success");
             await replacePageTextNodes(data.translated_texts);
 
@@ -341,11 +354,16 @@ async function performTranslation(targetLang, langName) {
             throw new Error("Missing translated texts from backend");
         }
     } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Translation aborted.');
+            return;
+        }
         addMessage("Translation failed. 1e may be incorrect. Please verify connection.", "ai", "error");
         console.error(error);
         translateLang.value = "";
     } finally {
         translateLang.disabled = false;
+        translationAbortController = null;
     }
 }
 
@@ -385,6 +403,10 @@ function stopAgentLoop() {
         if (currentAbortController) {
             currentAbortController.abort();
             currentAbortController = null;
+        }
+        if (translationAbortController) {
+            translationAbortController.abort();
+            translationAbortController = null;
         }
         setButtonState(false);
         // Remove typing indicator immediately if it exists
@@ -600,11 +622,29 @@ function addMessage(text, sender, type = 'normal') {
             </svg>
             ${text}
         </div>`;
-    } else if (type === 'success') {
-        msgDiv.innerHTML = `<div class="success-msg">
-            <img src="1e.png" alt="Success Logo" width="16" height="16" style="border-radius: 2px;">
-            ${text}
-        </div>`;
+    } else if (type === 'success' || type === 'translation-success') {
+        const isTranslation = type === 'translation-success';
+        msgDiv.innerHTML = `
+            <div class="success-msg">
+                <div class="success-msg-header">
+                    <img src="1e.png" alt="Success Logo" width="16" height="16" style="border-radius: 2px;">
+                    ${text}
+                </div>
+                ${isTranslation ? '<button class="cancel-translate-btn">Cancel Translation</button>' : ''}
+            </div>`;
+
+        if (isTranslation) {
+            const cancelBtn = msgDiv.querySelector('.cancel-translate-btn');
+            cancelBtn.addEventListener('click', async () => {
+                cancelBtn.disabled = true;
+                cancelBtn.textContent = 'Reverting...';
+                await revertPageText();
+                translateLang.value = "";
+                await chrome.storage.local.remove(['targetLang', 'langName']);
+                addMessage('Translation reverted.', 'ai');
+                msgDiv.remove();
+            });
+        }
     } else {
         const contentDiv = document.createElement('div');
         contentDiv.className = 'msg-content';
@@ -803,10 +843,90 @@ async function revertPageText() {
 }
 
 // -------------------------------------------------------------
+// Onboarding Guides
+// -------------------------------------------------------------
+function showOnboardingGuides() {
+    const guides = [
+        {
+            element: document.getElementById('model-select'),
+            text: "Select your preferred AI model here.",
+            position: 'bottom',
+            delay: 500
+        },
+        {
+            element: document.getElementById('translate-lang'),
+            text: "Translate the entire page in one click.",
+            position: 'bottom',
+            delay: 3500
+        },
+        {
+            element: document.getElementById('clear-btn'),
+            text: "Clear chat and reset translation.",
+            position: 'bottom',
+            delay: 6500
+        },
+        {
+            element: document.getElementById('mic-btn'),
+            text: "Use your voice to interact.",
+            position: 'top',
+            delay: 9500
+        }
+    ];
+
+    guides.forEach((guide, index) => {
+        setTimeout(() => {
+            if (!guide.element) return;
+
+            const guideEl = document.createElement('div');
+            guideEl.className = `onboarding-guide ${guide.position}`;
+            guideEl.innerText = guide.text;
+            document.body.appendChild(guideEl);
+
+            const rect = guide.element.getBoundingClientRect();
+            let top, left;
+
+            if (guide.position === 'bottom') {
+                top = rect.bottom + 12;
+                left = rect.left + (rect.width / 2) - 90; 
+            } else if (guide.position === 'top') {
+                top = rect.top - 50;
+                left = rect.left + (rect.width / 2) - 90;
+            }
+
+            // Constrain to viewport
+            left = Math.max(10, Math.min(window.innerWidth - 190, left));
+
+            guideEl.style.top = `${top}px`;
+            guideEl.style.left = `${left}px`;
+
+            // Fade in
+            setTimeout(() => guideEl.classList.add('show'), 100);
+
+            // Fade out
+            setTimeout(() => {
+                guideEl.classList.remove('show');
+                setTimeout(() => guideEl.remove(), 500);
+            }, 3000);
+
+        }, guide.delay);
+    });
+}
+
+// -------------------------------------------------------------
 // Auto-Restore Persistent Translation and Model State logic
 // -------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
+    // Show guides on first load
+    chrome.storage.local.get(['guidesShown'], (res) => {
+        if (!res.guidesShown) {
+            showOnboardingGuides();
+            chrome.storage.local.set({ guidesShown: true });
+        }
+    });
+
     const data = await chrome.storage.local.get(['targetLang', 'langName', 'selectedModel']);
+    // ... rest of the code is unchanged ...
+
 
     const modelSelect = document.getElementById('model-select');
     if (modelSelect && data.selectedModel) {
