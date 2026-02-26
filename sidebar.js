@@ -285,7 +285,15 @@ async function performTranslation(targetLang, langName) {
         const data = await response.json();
         if (data.translated_texts) {
             addMessage("Translation complete. Updating the page in-place...", "ai", "translation-success");
-            replacePageTextNodes(data.translated_texts);
+            await replacePageTextNodes(data.translated_texts);
+
+            // Notify content script about updated translation state
+            setTimeout(async () => {
+                const tab = await getActiveTab();
+                if (tab) {
+                    chrome.tabs.sendMessage(tab.id, { type: "SET_TRANSLATION_STATE", lang: targetLang });
+                }
+            }, 1000);
         } else {
             throw new Error("Missing translated texts from backend");
         }
